@@ -3,39 +3,39 @@
 const PALETTE_SWAP_SEC = 30;
 const MAX_LIVES = 3;
 const SCORE_WHITE = 100;
-
 const SPECIAL_SPEED_MUL = 1.8;
 const SPAWN_EVERY_MS_BASE = 900;
 const MAX_BALL_SPEED = 1200;
 
+// MODERN + EDGEY COLOR PALETTE (no darks, bright, bold, contrasting)
 const PALETTE_BASE = [
-    { name: 'Red', fill: getCSS('--red') },
-    { name: 'Orange', fill: getCSS('--orange') },
-    { name: 'Yellow', fill: getCSS('--yellow') },
-    { name: 'Green', fill: getCSS('--green') },
-    { name: 'Blue', fill: getCSS('--blue') },
-    { name: 'Indigo', fill: getCSS('--indigo') },
-    { name: 'Violet', fill: getCSS('--violet') }
+    { name: 'Fluoro Red', fill: '#FF385F' },
+    { name: 'Electric Orange', fill: '#FF7100' },
+    { name: 'Neon Yellow', fill: '#FFE925' },
+    { name: 'Acid Lime', fill: '#73FA2E' },
+    { name: 'Azure', fill: '#11B5EA' },
+    { name: 'Hyper Purple', fill: '#9C1DF8' }
 ];
 
 const WHITE = getCSS('--white');
 const HEART_COLOR = getCSS('--heart');
 
 const COLOR_WAVELENGTHS = {
-    'Red': 700,
-    'Orange': 620,
-    'Yellow': 580,
-    'Green': 530,
-    'Blue': 470,
-    'Indigo': 425,
-    'Violet': 400
+    'Fluoro Red': 700,
+    'Electric Orange': 620,
+    'Neon Yellow': 580,
+    'Acid Lime': 530,
+    'Azure': 470,
+    'Hyper Purple': 425
 };
+
+// ===== CANVAS SETUP =====
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
-
 let DPR = Math.max(1, window.devicePixelRatio || 1);
 let W = window.innerWidth, H = window.innerHeight;
+
 function resizeCanvas() {
     W = window.innerWidth; H = window.innerHeight;
     DPR = Math.max(1, window.devicePixelRatio || 1);
@@ -46,7 +46,10 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-function getPaddleConfig() { return { w: Math.max(120, W * 0.16), h: 22, y: H - 64, speed: Math.max(520, W * 1.25) }; }
+function getPaddleConfig() {
+    // 10% shorter paddle bar
+    return { w: Math.max(108, W * 0.144), h: 22, y: H - 64, speed: Math.max(520, W * 1.25) };
+}
 const GAME_SPEED_START = 1.2;
 const GAME_SPEED_MAX = 3.0;
 function getBallBaseSpeed() {
@@ -55,21 +58,26 @@ function getBallBaseSpeed() {
     return Math.max(base, H * 0.28 * speedMul);
 }
 
-// ===== State =====
+// ===== STATE =====
 
 let palette = PALETTE_BASE.slice();
 let nextPaletteSwapAt = 0;
-let score = 0; let lives = MAX_LIVES; let orbs = [];
+let score = 0;
+let lives = MAX_LIVES;
+let orbs = [];
 let scorePopups = [];
-let lastSpawnAt = performance.now(); let lastTime = performance.now(); let elapsed = 0;
-let paused = false; let gameOver = false;
+let lastSpawnAt = performance.now();
+let lastTime = performance.now();
+let elapsed = 0;
+let paused = false;
+let gameOver = false;
 let colorIndex = 0;
 let prevSpawnXs = [null, null];
 let prevSpawnShapes = [];
-
 let pulse = 0;
 let flash = 0;
 let palettePulse = 0;
+let paddleBounce = 0; // For paddle bounce animation
 
 const uiScore = document.getElementById('uiScore');
 const uiLives = document.getElementById('uiLives');
@@ -80,7 +88,6 @@ const uiCurrName = document.getElementById('uiCurrName');
 const uiNextDot = document.getElementById('uiNextDot');
 const uiNextName = document.getElementById('uiNextName');
 const overlayEl = document.getElementById('overlay');
-
 const bgm = document.getElementById('bgm');
 let musicOn = false;
 document.getElementById('btnMusic').addEventListener('click', () => {
@@ -93,26 +100,17 @@ let paddleX = 0;
 function resetPaddle() { paddleX = (W - getPaddleConfig().w) / 2; }
 resetPaddle();
 
-const keys = new Set();
-addEventListener('keydown', (e) => {
-    if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'A', 'D'].includes(e.key)) { keys.add(e.key.toLowerCase()); e.preventDefault(); }
-    if (e.key === ' ') { cycleColor(); e.preventDefault(); }
-    if (e.key.toLowerCase() === 'p') { togglePause(); }
-    if (e.key.toLowerCase() === 'r') { restart(); }
-});
-addEventListener('keyup', (e) => { if (['ArrowLeft', 'ArrowRight', 'a', 'd', 'A', 'D'].includes(e.key)) keys.delete(e.key.toLowerCase()); });
+// ===== INPUT: ONLY MOUSE FOR MOVEMENT =====
+// Remove all keyboard, touch, and palette cycling controls
 canvas.addEventListener('pointermove', (ev) => {
     const rect = canvas.getBoundingClientRect();
     const mx = (ev.clientX - rect.left) / rect.width * W;
     paddleX = clamp(mx - getPaddleConfig().w / 2, 0, W - getPaddleConfig().w);
 });
-let pointerDown = null;
-canvas.addEventListener('pointerdown', (ev) => { pointerDown = { x: ev.clientX, y: ev.clientY, t: performance.now() }; });
-canvas.addEventListener('pointerup', (ev) => {
-    if (!pointerDown) return; const dt = performance.now() - pointerDown.t; const dx = Math.abs(ev.clientX - pointerDown.x); const dy = Math.abs(ev.clientY - pointerDown.y);
-    pointerDown = null;
-    if (dt < 260 && dx < 8 && dy < 8) { cycleColor(); }
-});
+
+// (Disable all keys for paddle+palette! No event listeners.)
+// (No pointerdown/pointerup/click/cycleColor.)
+
 document.getElementById('btnPause').addEventListener('click', togglePause);
 document.getElementById('btnRestart').addEventListener('click', restart);
 document.getElementById('btnOverlayRestart').addEventListener('click', restart);
@@ -133,8 +131,10 @@ const SHAPE_TYPES = [
     { type: 'hexagon', points: 24, speed: 1.3, weight: 6 }
 ];
 
+// === HEART SPAWN: At least every 5s if not full ===
+let lastHeartSpawn = performance.now();
+
 function pickShapeTypeWeighted(usedShapes) {
-    // Pick but not those already used (to ensure scatter for same shapes)
     const viable = SHAPE_TYPES.filter(s => !usedShapes.includes(s.type));
     const total = viable.reduce((a, s) => a + s.weight, 0);
     let r = Math.random() * total;
@@ -162,10 +162,14 @@ function chooseColors(shapesCount, currColorIdx) {
 }
 
 function spawnOrbs(orbsPerSpawn) {
-    // Ensure no two same shapes in this spawn share a close horizontal position
     let usedShapes = [];
-    let xs = []; prevSpawnShapes = [];
+    let xs = [];
+    prevSpawnShapes = [];
     const colorOrder = chooseColors(orbsPerSpawn, colorIndex);
+
+    // Count current hearts on screen
+    const heartCount = orbs.reduce((count, orb) => count + (orb.isHeart ? 1 : 0), 0);
+
     for (let i = 0; i < orbsPerSpawn; i++) {
         let shapeObj = pickShapeTypeWeighted(usedShapes);
         usedShapes.push(shapeObj.type);
@@ -174,23 +178,38 @@ function spawnOrbs(orbsPerSpawn) {
         do {
             orbX = randRange(32, W - 32);
             tries++;
-        } while ((xs.find(x => Math.abs(x - orbX) < 64 && shapeObj.type === prevSpawnShapes[xs.indexOf(x)]) && tries < 7));
+        } while (xs.some((x, idx) => Math.abs(x - orbX) < 64 && prevSpawnShapes[idx] === shapeObj.type) && tries < 20);
+
         xs.push(orbX);
         prevSpawnShapes.push(shapeObj.type);
 
-        let isWhite = Math.random() < 0.034;
+        // Allow heart spawn only if lives less than max and no hearts currently present
+        let heartSpawnProbability = 0;
+        if (lives < MAX_LIVES && heartCount === 0) {
+            heartSpawnProbability = 0.15; // 15% chance
+        }
+        const isHeart = Math.random() < heartSpawnProbability;
+
+        let isWhite = false;
+        if (!isHeart) {
+            isWhite = Math.random() < 0.034;
+        }
+
         spawnOrb({
+            isHeart: isHeart,
             isWhite: isWhite,
             colorObj: colorOrder[i],
             shapeObj,
             x: orbX
         });
     }
+
     prevSpawnXs = xs.slice(-2);
 }
 
 function spawnOrb(opts = {}) {
-    let r, x, baseVy, isWhite, isHeart, vy, colorObj, shapeType, shapePoints, rotSpeed, shapeObj, bounceY = 0, bounceDir = 1;
+    let r, x, isWhite, isHeart, vy, colorObj, shapeType, shapePoints, rotSpeed;
+
     isWhite = !!opts.isWhite;
     isHeart = !!opts.isHeart;
 
@@ -200,57 +219,65 @@ function spawnOrb(opts = {}) {
         shapePoints = 0;
         rotSpeed = 0;
         colorObj = { name: 'Heart', fill: HEART_COLOR };
+        vy = getBallBaseSpeed();
     } else {
         r = Math.max(8, Math.min(18, W * 0.008));
         if (isWhite) {
-            colorObj = { name: "White", fill: WHITE };
+            colorObj = { name: 'White', fill: WHITE };
             shapeType = 'whiteStar';
             shapePoints = SCORE_WHITE;
             rotSpeed = (0.18 + Math.random() * 0.08) * 0.75;
             vy = getBallBaseSpeed() * 1.5;
         } else {
             colorObj = opts.colorObj;
-            shapeObj = opts.shapeObj;
-            shapeType = shapeObj.type;
-            shapePoints = shapeObj.points;
+            shapeType = opts.shapeObj.type;
+            shapePoints = opts.shapeObj.points;
             rotSpeed = ((0.12 - ((COLOR_WAVELENGTHS[colorObj.name] || 500 - 400) / 300) * 0.09)) * 0.75;
-            vy = Math.min(getBallBaseSpeed() * shapeObj.speed, MAX_BALL_SPEED);
+            vy = Math.min(getBallBaseSpeed() * opts.shapeObj.speed, MAX_BALL_SPEED);
         }
     }
 
     x = opts.x || randRange(r, W - r);
+
     const orb = {
         x,
         y: -r * 2,
         r,
         vy,
-        colorName: colorObj.name, fill: colorObj.fill,
+        colorName: colorObj.name,
+        fill: colorObj.fill,
         isWhite,
         isHeart,
         shapeType,
         shapePoints,
-        rot: (!isHeart ? Math.random() * Math.PI * 2 : 0),
-        rotSpeed: (!isHeart ? Math.abs(rotSpeed) : 0),
+        rot: isHeart ? 0 : Math.random() * Math.PI * 2,
+        rotSpeed: isHeart ? 0 : Math.abs(rotSpeed),
         bounceY: 0,
         bounceDir: 1,
         bounceAnim: false
     };
+
     orbs.push(orb);
 }
 
+
 // ===== COLLISION/LOGIC =====
+let started = false;
+let fallingDelay = 2000;
+let startTime = 0;
 
 function update(dt, now) {
     const paddle = getPaddleConfig();
-    let vx = 0;
-    if (keys.has('arrowleft') || keys.has('a')) vx -= paddle.speed;
-    if (keys.has('arrowright') || keys.has('d')) vx += paddle.speed;
-    paddleX = clamp(paddleX + vx * dt, 0, W - paddle.w);
+    // Mouse only control!
+    paddleX = clamp(paddleX, 0, W - paddle.w);
 
-    const spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
-    if (now - lastSpawnAt > spawnEvery) {
-        lastSpawnAt = now;
-        spawnOrbs(6); // spawn 6 orbs per tick
+    // SPAWN ORBS only if 2s elapsed and not paused or over
+    if (started && now - startTime > fallingDelay) {
+        const spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
+        if (now - lastSpawnAt > spawnEvery) {
+            lastSpawnAt = now;
+            spawnOrbs(6);
+        }
     }
 
     for (let i = orbs.length - 1; i >= 0; i--) {
@@ -264,7 +291,9 @@ function update(dt, now) {
                 o.bounceY = 0; o.bounceAnim = false; o.bounceDir = 1;
             }
         }
+
         if (o.y - o.r > H) { orbs.splice(i, 1); continue; }
+
         const px = paddleX, py = paddle.y, pw = paddle.w, ph = paddle.h;
         const cx = clamp(o.x, px, px + pw); const cy = clamp(o.y, py, py + ph);
         const dx = o.x - cx, dy = o.y - cy;
@@ -275,6 +304,7 @@ function update(dt, now) {
             else if (o.colorName === palette[colorIndex].name) {
                 score += o.shapePoints; popupScore = o.shapePoints;
                 o.bounceAnim = true; o.bounceY = 0; o.bounceDir = 1;
+                paddleBounce = 14;
             } else { lives -= 1; flash = 160; }
             if (popupScore > 0) {
                 scorePopups.push({ x: o.x, y: o.y, val: '+' + popupScore, t: 0, color: o.fill });
@@ -288,7 +318,6 @@ function update(dt, now) {
         if (scorePopups[i].t > 0.9) scorePopups.splice(i, 1);
     }
 
-    // palette auto-swap
     if (now >= nextPaletteSwapAt) {
         const nextColor = palette[(colorIndex + 1) % palette.length];
         const currColor = palette[colorIndex];
@@ -300,9 +329,8 @@ function update(dt, now) {
         palette = shuffled;
         colorIndex = palette.findIndex(c => c.name === nextColor.name);
         nextPaletteSwapAt = now + PALETTE_SWAP_SEC * 1000;
-        palettePulse = 80; // trigger big palette pulse
+        palettePulse = 80;
     }
-
     score = Math.max(0, score);
     lives = Math.max(0, Math.min(MAX_LIVES, lives));
     if (lives <= 0 && !gameOver) { endGame(); }
@@ -310,7 +338,8 @@ function update(dt, now) {
 
 function endGame() {
     gameOver = true; paused = true;
-    overlayEl.classList.add('show'); document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
+    overlayEl.classList.add('show');
+    document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
 }
 
 function restart() {
@@ -322,17 +351,21 @@ function restart() {
     paused = false; gameOver = false; overlayEl.classList.remove('show'); resetPaddle();
     prevSpawnXs = [null, null]; prevSpawnShapes = [];
     palettePulse = 0;
+    started = false;
+    startTime = performance.now();
+    setTimeout(() => { started = true; }, fallingDelay);
+    lastHeartSpawn = performance.now();
     requestAnimationFrame(loop);
 }
 
 function togglePause() { if (gameOver) return; paused = !paused; if (!paused) { lastTime = performance.now(); requestAnimationFrame(loop); } }
-function cycleColor() { if (gameOver) return; colorIndex = (colorIndex + 1) % palette.length; pulse = 180; palettePulse = 45; }
 
 // ===== RENDER =====
 
 function draw(now) {
     ctx.clearRect(0, 0, W, H);
     ctx.save();
+
     const bgWaveCount = 3;
     for (let i = 0; i < bgWaveCount; i++) {
         const t = now / 1000 + i * 2;
@@ -355,7 +388,6 @@ function draw(now) {
         if (!o.isHeart) ctx.rotate(o.rot);
         ctx.shadowColor = o.isWhite ? '#fff' : o.fill;
         ctx.shadowBlur = o.isWhite ? 32 : 16;
-
         if (o.isHeart) {
             ctx.shadowBlur = 24;
             drawHeartPolygon(0, 0, o.r, HEART_COLOR);
@@ -391,37 +423,57 @@ function draw(now) {
         ctx.restore();
     }
 
-    // Palette pulse/bounce effect
     let blinkNow = false;
     const timeLeft = (nextPaletteSwapAt - now) / 1000;
     if (palettePulse > 0) palettePulse -= 5;
     let padColor;
     let paletteScale = 1 + (palettePulse > 0 ? Math.max(0, Math.sin((palettePulse / 60) * Math.PI / 2)) * 0.25 : 0);
+    if (paddleBounce > 0) {
+        paletteScale += Math.sin(paddleBounce / 14 * Math.PI) * 0.16;
+        paddleBounce--;
+    }
 
     if (timeLeft <= 3 && timeLeft > 0) {
         if (!draw.blinkActive) { draw.blinkActive = true; draw.blinkInterval = now; draw.blinkState = false; }
         if (now - draw.blinkInterval > 200) { draw.blinkState = !draw.blinkState; draw.blinkInterval = now; }
         blinkNow = draw.blinkState;
     } else { draw.blinkActive = false; draw.blinkState = false; }
-
     if (blinkNow) { padColor = palette[(colorIndex + 1) % palette.length].fill; }
     else { padColor = palette[colorIndex].fill; }
 
+    // Edgy, modern arc paddle
     ctx.save();
-    ctx.translate(paddleX + getPaddleConfig().w / 2, getPaddleConfig().y + getPaddleConfig().h / 2);
+    ctx.translate(
+        paddleX + getPaddleConfig().w / 2,
+        getPaddleConfig().y + getPaddleConfig().h / 2
+    );
     ctx.scale(paletteScale, paletteScale);
-    ctx.fillStyle = padColor;
-    ctx.fillRect(-getPaddleConfig().w / 2, -getPaddleConfig().h / 2, getPaddleConfig().w, getPaddleConfig().h);
-    ctx.strokeStyle = 'rgba(255,255,255,.12)';
-    ctx.strokeRect(-getPaddleConfig().w / 2 + .5, -getPaddleConfig().h / 2 + .5, getPaddleConfig().w - 1, getPaddleConfig().h - 1);
+
+    let paddleW = getPaddleConfig().w;
+    let slimH = getPaddleConfig().h * 0.65; // 45% as tall as original
+
+    ctx.fillStyle = padColor; // solid, edgy color
+    ctx.shadowColor = padColor;
+    ctx.shadowBlur = 16;
+
+    ctx.fillRect(-paddleW / 2, -slimH / 2, paddleW, slimH);
+
+    ctx.lineWidth = 2;
+    ctx.strokeStyle = "#fff6";
+    ctx.strokeRect(
+        -paddleW / 2 + 1,
+        -slimH / 2 + 1,
+        paddleW - 2,
+        slimH - 2
+    );
+
     ctx.restore();
 
-    if (pulse > 0) pulse -= 16;
 
+    if (pulse > 0) pulse -= 16;
     ctx.fillStyle = 'rgba(255,255,255,0.04)'; ctx.fillRect(0, 0, W, 40);
     ctx.fillStyle = '#cfe4ff'; ctx.font = Math.max(12, W * 0.012) + 'px system-ui, ui-sans-serif';
-    ctx.fillText('Catch your color • Space to change • Move mouse to steer • Drag/touch to move on mobile', 18, 26);
-
+    ctx.fillText('Catch your color • Move mouse to steer', 18, 26);
     if (flash > 0) { ctx.save(); ctx.fillStyle = `rgba(255,0,0,${flash / 480})`; ctx.fillRect(0, 0, W, H); ctx.restore(); flash -= 16; }
 
     uiScore.textContent = score;
@@ -432,37 +484,26 @@ function draw(now) {
     uiLives.innerHTML = '';
     for (let i = 0; i < MAX_LIVES; i++) { const s = document.createElement('span'); s.className = 'heart-ui' + (i < lives ? '' : ' dim'); uiLives.appendChild(s); }
 }
-
-draw.blinkActive = false;
-draw.blinkInterval = 0;
-draw.blinkState = false;
+draw.blinkActive = false; draw.blinkInterval = 0; draw.blinkState = false;
 
 function drawPolygon(ctx, sides, r, color, rotation = 0) {
-    ctx.save();
-    ctx.rotate(rotation);
-    ctx.beginPath();
+    ctx.save(); ctx.rotate(rotation); ctx.beginPath();
     for (let i = 0; i < sides; i++) {
         const angle = Math.PI / 2 + i * (2 * Math.PI / sides);
         const x = Math.cos(angle) * r;
         const y = Math.sin(angle) * r;
         if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
     }
-    ctx.closePath();
-    ctx.fillStyle = color;
+    ctx.closePath(); ctx.fillStyle = color;
     ctx.globalAlpha = 0.95 + 0.05 * Math.sin(Date.now() / 400);
     ctx.shadowBlur = 14 + 6 * Math.abs(Math.sin(Date.now() / 540));
-    ctx.fill();
-    ctx.restore();
+    ctx.fill(); ctx.restore();
 }
 
 function drawSemiCircle(ctx, r, color) {
-    ctx.beginPath();
-    ctx.arc(0, 0, r, Math.PI, 2 * Math.PI, false);
-    ctx.lineTo(r, 0);
-    ctx.arc(0, 0, r, 0, Math.PI, false);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
+    ctx.beginPath(); ctx.arc(0, 0, r, Math.PI, 1 * Math.PI, false);
+    ctx.lineTo(r, 0); ctx.arc(0, 0, r, 0, Math.PI, false); ctx.closePath();
+    ctx.fillStyle = color; ctx.fill();
 }
 
 function drawHeartPolygon(cx, cy, s, color) {
@@ -507,11 +548,11 @@ function loop(now) {
     const dt = Math.min(0.033, Math.max(0.008, (now - lastTime) / 1000));
     lastTime = now; elapsed += dt;
     resizeCanvas();
-    const paddle = getPaddleConfig(); if (paddleX > W - paddle.w) paddleX = W - paddle.w;
     update(dt, now);
     draw(now);
     requestAnimationFrame(loop);
 }
+
 function init() {
     resizeCanvas();
     resetPaddle();
@@ -522,7 +563,13 @@ function init() {
     nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
     prevSpawnXs = [null, null]; prevSpawnShapes = [];
     pulse = 0; palettePulse = 0;
+    started = false;
+    startTime = performance.now();
+    setTimeout(() => { started = true; }, fallingDelay);
+    lastHeartSpawn = performance.now();
     requestAnimationFrame(loop);
 }
+
 function resetPaddle() { const p = getPaddleConfig(); paddleX = (W - p.w) / 2; }
+
 init();
