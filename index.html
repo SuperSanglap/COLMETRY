@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Color Snap — Rainbow Edition (Fullscreen, Polished)</title>
+    <link rel="stylesheet" href="CSS/style.css">
+</head>
+
+<body>
+    <div class="game-container">
+        <canvas id="game"></canvas>
+    </div>
+
+    <!-- HUD inside the game (top-left / top-right) -->
+    <div class="hud-layer">
+        <div class="hud-left">
+            <div class="chip">
+                <div style="font-weight:800">Score</div>&nbsp;<div id="uiScore" style="margin-left:8px">0</div>
+            </div>
+            <div class="chip small">Lives&nbsp;<span class="hearts" id="uiLives"></span></div>
+        </div>
+        <div class="hud-right">
+            <div class="chip small">Speed&nbsp;<strong id="uiSpeed">1.0x</strong></div>
+            <div class="chip">Current&nbsp;<span id="uiCurrDot" class="dot" style="margin-left:8px"></span>&nbsp;<span
+                    id="uiCurrName" style="margin-left:6px;font-weight:700">Red</span></div>
+            <div class="chip">Next&nbsp;<span id="uiNextDot" class="dot" style="margin-left:8px"></span>&nbsp;<span
+                    id="uiNextName" style="margin-left:6px;font-weight:700">Orange</span></div>
+            <div class="chip small">Palette in&nbsp;<strong id="uiTimer">60</strong>s</div>
+            <button id="btnPause" class="control-btn">Pause</button>
+            <button id="btnRestart" class="control-btn">Restart</button>
+            <button id="btnMusic" class="control-btn">Music</button>
+        </div>
+    </div>
+
+    <div id="overlay" class="overlay">
+        <div class="card">
+            <div id="overlayText" style="font-weight:800;font-size:20px;margin-bottom:8px">Game Over</div>
+            <div style="opacity:.85;margin-bottom:12px">Press <b>R</b> to restart</div><button id="btnOverlayRestart"
+                class="control-btn">Restart</button>
+        </div>
+    </div>
+
+    <!-- Placeholder for background music. Set src to a file URL to enable. Browsers require a user gesture to play audio. -->
+    <audio id="bgm" loop preload="none" src=""></audio>
+
+    <script src="JS/script.js"></script>
+</body>
+
+</html>

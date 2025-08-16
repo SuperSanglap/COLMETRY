@@ -1,0 +1,145 @@
+:root {
+    --bg: #081017;
+    --panel: #0f1720;
+    --ink: #e8f1ff;
+    --muted: #9ab0c6;
+    --red: #FF4B4B;
+    --orange: #FFA33C;
+    --yellow: #FFD93D;
+    --green: #4ADE80;
+    --blue: #60A5FA;
+    --indigo: #6366F1;
+    --violet: #A78BFA;
+    --white: #ffffff;
+    --heart: #ff5b6e;
+}
+
+html,
+body {
+    height: 100%;
+    margin: 0;
+    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial;
+    background: var(--bg);
+    color: var(--ink);
+}
+
+.game-container {
+    position: fixed;
+    inset: 0;
+    padding: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center
+}
+
+canvas {
+    display: block;
+}
+
+/* HUD (inside game) */
+.hud-layer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    right: 0;
+    pointer-events: none
+}
+
+.hud-left,
+.hud-right {
+    pointer-events: auto;
+    padding: 14px;
+    display: flex;
+    gap: 10px;
+    align-items: center
+}
+
+.hud-left {
+    position: fixed;
+    left: 14px;
+    top: 14px
+}
+
+.hud-right {
+    position: fixed;
+    right: 14px;
+    top: 14px
+}
+
+.chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 12px;
+    border-radius: 12px;
+    background: rgba(10, 16, 24, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    backdrop-filter: blur(6px);
+    font-weight: 600
+}
+
+.dot {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+}
+
+.small {
+    font-size: 13px;
+    color: var(--muted)
+}
+
+.hearts {
+    display: inline-flex;
+    gap: 6px;
+    align-items: center
+}
+
+/* UI heart (CSS) - raw polygon (no rounded borders) */
+.heart-ui {
+    width: 18px;
+    height: 18px;
+    background: var(--heart);
+    clip-path: polygon(50% 80%, 0 40%, 20% 0, 50% 20%, 80% 0, 100% 40%);
+    opacity: 1
+}
+
+.heart-ui.dim {
+    opacity: 0.22
+}
+
+/* controls */
+.control-btn {
+    appearance: none;
+    border: 0;
+    background: rgba(255, 255, 255, 0.04);
+    color: var(--ink);
+    padding: 8px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700
+}
+
+/* overlay */
+.overlay {
+    position: fixed;
+    inset: 0;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.55)
+}
+
+.overlay.show {
+    display: flex
+}
+
+.card {
+    background: #0d151e;
+    border: 1px solid #1e2a38;
+    border-radius: 12px;
+    padding: 18px;
+    min-width: 300px;
+    text-align: center
+}
