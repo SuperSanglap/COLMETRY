@@ -1,3 +1,4 @@
+
 // ===== CONFIG =====
 
 const PALETTE_SWAP_SEC = 30;
@@ -7,7 +8,6 @@ const POWERUP_DURATION_SEC = 15;
 const POWERUP_MIN_SPAWN_DELAY = 5; // seconds between 2 powerups spawning
 const SPAWN_EVERY_MS_BASE = 900;
 const MAX_BALL_SPEED = 1200;
-
 const PALETTE_BASE = [
     { name: 'Fluoro Red', fill: '#FF385F' },
     { name: 'Electric Orange', fill: '#FF7100' },
@@ -16,10 +16,8 @@ const PALETTE_BASE = [
     { name: 'Azure', fill: '#11B5EA' },
     { name: 'Hyper Purple', fill: '#9C1DF8' }
 ];
-
-const GOLDEN = '#FFD700'; // Golden color for "white" star
+const GOLDEN = '#FFFFFF'; // Bright white star for 100 pts
 const HEART_COLOR = getCSS('--heart');
-
 const COLOR_WAVELENGTHS = {
     'Fluoro Red': 700,
     'Electric Orange': 620,
@@ -28,20 +26,26 @@ const COLOR_WAVELENGTHS = {
     'Azure': 470,
     'Hyper Purple': 425
 };
-
 // Powerup Types
 const POWERUP_TYPES = [
-    { type: 'shield', icon: '🛡️' },
-    { type: 'clock', icon: '🕒' },
-    { type: 'magnet', icon: '🧲' }
+    { type: 'shield' },
+    { type: 'clock' },
+    { type: 'magnet' }
 ];
-
 const SPECIAL_OBJECTS = ['heart', 'goldenStar', ...POWERUP_TYPES.map(p => p.type)];
+
+const SPECIAL_ORB_SIZE = () => Math.max(20, Math.min(30, W * 0.017)); // all specials same size
+const ORBS_MIN = 3; // Start orb density
+const ORBS_MAX = 12; // Max orb density
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
+
 let DPR = Math.max(1, window.devicePixelRatio || 1);
 let W = window.innerWidth, H = window.innerHeight;
+
+let mouseX = W / 2, mouseY = H / 2;
+let mouseInGame = false;
 
 function getCSS(varName) {
     return getComputedStyle(document.documentElement)
@@ -58,7 +62,6 @@ function resizeCanvas() {
     canvas.height = Math.floor(H * DPR);
     ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
 }
-
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
@@ -73,7 +76,6 @@ function getPaddleConfig() {
 
 const GAME_SPEED_START = 1.2;
 const GAME_SPEED_MAX = 3.0;
-
 function getBallBaseSpeed() {
     const base = 200 * GAME_SPEED_START;
     const speedMul = Math.min(GAME_SPEED_START + elapsed * 0.015, GAME_SPEED_MAX);
@@ -84,6 +86,7 @@ function getBallBaseSpeed() {
 
 let palette = PALETTE_BASE.slice();
 let nextPaletteSwapAt = 0;
+
 let score = 0;
 let lives = MAX_LIVES;
 let orbs = [];
@@ -100,11 +103,9 @@ let pulse = 0;
 let flash = 0;
 let palettePulse = 0;
 let paddleBounce = 0;
-
 let powerupTimers = { shield: 0, clock: 0, magnet: 0 };
 let lastPowerupSpawn = -POWERUP_MIN_SPAWN_DELAY * 2000; // allow spawn at start
 
-// DOM Element references
 const uiScore = document.getElementById('uiScore');
 const uiLives = document.getElementById('uiLives');
 const uiSpeed = document.getElementById('uiSpeed');
@@ -119,19 +120,25 @@ let paddleX = 0;
 function resetPaddle() { paddleX = (W - getPaddleConfig().w) / 2; }
 resetPaddle();
 
-// ===== INPUTS: mouse only =====
+// ===== INPUT =====
 canvas.addEventListener('pointermove', ev => {
     const rect = canvas.getBoundingClientRect();
-    const mx = (ev.clientX - rect.left) / rect.width * W;
-    paddleX = clamp(mx - getPaddleConfig().w / 2, 0, W - getPaddleConfig().w);
-});
+    const mx = ((ev.clientX - rect.left) / rect.width) * W;
+    mouseX = mx; // update for cursor
+    mouseY = ((ev.clientY - rect.top) / rect.height) * H;
 
+    // Move palette so its center matches the pointer's X
+    paddleX = clamp(mx - getPaddleConfig().w / 2, 0, W - getPaddleConfig().w);
+    mouseInGame = true;
+});
+canvas.addEventListener('pointerleave', () => {
+    mouseInGame = false;
+});
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 function randRange(a, b) { return Math.random() * (b - a) + a; }
 function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]] } return a; }
 
 // ==== SPAWN & ORBS ====
-
 const SHAPE_TYPES = [
     { type: 'star', points: 45, speed: 1.1, weight: 3 },
     { type: 'triangle', points: 13, speed: 0.9, weight: 13 },
@@ -140,24 +147,26 @@ const SHAPE_TYPES = [
     { type: 'pentagon', points: 18, speed: 1.2, weight: 7 },
     { type: 'hexagon', points: 24, speed: 1.3, weight: 6 }
 ];
-
-// For animation
 function nowMs() { return performance.now(); }
 
-// Powerup pool controls simultaneous spawn guarantee
 let canSpawnPowerup = true;
-let lastPowerupType = null;
-
-function pickShapeTypeWeighted(usedShapes) {
+let lastPowerupType = null; function pickShapeTypeWeighted(usedShapes) {
     const viable = SHAPE_TYPES.filter(s => !usedShapes.includes(s.type));
+    // If none left, reset usedShapes so all are viable again
+    if (viable.length === 0) {
+        usedShapes.length = 0; // clear usedShapes!
+        // recalc viable array
+        return pickShapeTypeWeighted(usedShapes);
+    }
     const total = viable.reduce((a, s) => a + s.weight, 0);
     let r = Math.random() * total;
-    for (const s of viable) { if (r < s.weight) return s; r -= s.weight; }
+    for (const s of viable) {
+        if (r < s.weight) return s;
+        r -= s.weight;
+    }
     return viable[viable.length - 1];
 }
-
 function chooseColors(shapesCount, currColorIdx) {
-    // 40% current color, 60% other colors
     const outColors = [];
     let currColorSpawns = Math.floor(shapesCount * 0.4);
     let restSpawns = shapesCount - currColorSpawns;
@@ -178,7 +187,6 @@ function spawnOrbs(orbsPerSpawn) {
     prevSpawnShapes = [];
     const colorOrder = chooseColors(orbsPerSpawn, colorIndex);
 
-    // Count current hearts, existing powerups on screen
     const heartCount = orbs.reduce((count, orb) => count + (orb.isHeart ? 1 : 0), 0);
     const powerupCount = orbs.reduce((count, orb) => orb.isPowerup ? count + 1 : count, 0);
 
@@ -193,32 +201,27 @@ function spawnOrbs(orbsPerSpawn) {
         xs.push(orbX);
         prevSpawnShapes.push(shapeObj.type);
 
-        // Allow heart spawn
         let isHeart = false;
         if (!isHeart && lives < MAX_LIVES && heartCount === 0) {
             if (Math.random() < 0.1) isHeart = true;
         }
 
-        // Powerup spawn chance: not at the same time and with min delay, max 1 on screen at once
         let isPowerup = false;
         let powerupType = null;
         if (!isHeart && powerupCount === 0 && nowMs() > lastPowerupSpawn + POWERUP_MIN_SPAWN_DELAY * 1000 && canSpawnPowerup && Math.random() < 0.08) {
-            // Randomly select a type, but not two of same in a row
             powerupType = POWERUP_TYPES[Math.floor(Math.random() * POWERUP_TYPES.length)].type;
             if (powerupType === lastPowerupType) powerupType = POWERUP_TYPES.filter(p => p.type !== lastPowerupType)[0].type;
             isPowerup = true;
             lastPowerupSpawn = nowMs();
             lastPowerupType = powerupType;
-            canSpawnPowerup = false; // will be set true after this one's caught or missed
+            canSpawnPowerup = false;
         }
 
-        // Golden star spawn
         let isGolden = false;
         if (!isHeart && !isPowerup && Math.random() < 0.03) {
             isGolden = true;
         }
 
-        // Only one special per orb
         if (isHeart) {
             spawnOrb({ isHeart: true, x: orbX });
         } else if (isPowerup) {
@@ -245,34 +248,30 @@ function spawnOrb(opts = {}) {
     let bubble = false;
     let powerupType = opts.powerupType || null;
 
-    // Heart
     if (isHeart) {
-        r = Math.max(16, Math.min(28, W * 0.014));
+        r = SPECIAL_ORB_SIZE();
         shapeType = 'heart';
         colorObj = { name: 'Heart', fill: HEART_COLOR };
         beating = true; bubble = true;
         vy = getBallBaseSpeed();
         shapePoints = 0;
     }
-    // Powerups
     else if (isPowerup) {
-        r = Math.max(18, Math.min(30, W * 0.016));
+        r = SPECIAL_ORB_SIZE();
         shapeType = powerupType;
         colorObj = { name: powerupType, fill: '#ffffff' };
         beating = true; bubble = true;
         vy = getBallBaseSpeed() * 1.1;
         shapePoints = 0;
     }
-    // Golden Star
     else if (isGolden) {
-        r = Math.max(13, Math.min(24, W * 0.013));
+        r = SPECIAL_ORB_SIZE();
         shapeType = 'goldenStar';
         colorObj = { name: 'Golden', fill: GOLDEN };
         beating = true; bubble = true;
         vy = getBallBaseSpeed() * 1.4;
         shapePoints = SCORE_GOLDEN;
     }
-    // Regular
     else {
         r = Math.max(8, Math.min(18, W * 0.008));
         colorObj = opts.colorObj;
@@ -304,17 +303,10 @@ function spawnOrb(opts = {}) {
     orbs.push(orb);
 }
 
-// ==== POWERUP EFFECTS ====
 function activatePowerup(type) {
-    if (type === 'shield') {
-        powerupTimers.shield = POWERUP_DURATION_SEC;
-    }
-    if (type === 'clock') {
-        powerupTimers.clock = POWERUP_DURATION_SEC;
-    }
-    if (type === 'magnet') {
-        powerupTimers.magnet = POWERUP_DURATION_SEC;
-    }
+    if (type === 'shield') powerupTimers.shield = POWERUP_DURATION_SEC;
+    if (type === 'clock') powerupTimers.clock = POWERUP_DURATION_SEC;
+    if (type === 'magnet') powerupTimers.magnet = POWERUP_DURATION_SEC;
 }
 
 function updatePowerups(dt) {
@@ -336,42 +328,58 @@ function updatePowerups(dt) {
 let started = false;
 let fallingDelay = 2000;
 let startTime = 0;
-
 function update(dt, now) {
     const paddle = getPaddleConfig();
     paddleX = clamp(paddleX, 0, W - paddle.w);
 
     updatePowerups(dt);
 
+    // Orbs density grows with time
+    const progress = Math.min(elapsed / 35, 1); // Full after 35 seconds
+    const orbDensity = Math.floor(ORBS_MIN + (ORBS_MAX - ORBS_MIN) * progress);
+
     if (started && now - startTime > fallingDelay) {
         const spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
         if (now - lastSpawnAt > spawnEvery) {
             lastSpawnAt = now;
-            spawnOrbs(6);
+            spawnOrbs(orbDensity);
         }
     }
 
-    // Powerup: Magnet
     const magnetActive = powerupTimers.magnet > 0;
+
     for (let i = orbs.length - 1; i >= 0; i--) {
         const o = orbs[i];
         if (o.isPowerup && (o.y > H)) { orbs.splice(i, 1); canSpawnPowerup = true; continue; }
         o.y += o.vy * dt * (powerupTimers.clock > 0 && !o.isPowerup ? 0.4 : 1);
 
-        // Animate beat/bubble for specials
         if (o.beating) {
             const t = (nowMs() - o.spawnTime) / 240;
             o.beatScale = 1 + Math.sin(t) * 0.18;
         }
-        if (magnetActive && o.shapeType !== undefined && o.colorName === palette[colorIndex].name && !o.isPowerup && !o.isHeart && !o.isGolden) {
-            // Move toward center of paddle
-            let paddleCx = paddleX + paddle.w / 2;
-            if (Math.abs(o.x - paddleCx) > 4) {
-                o.x += Math.sign(paddleCx - o.x) * 6;
+        // Magnet: attraction by displacement path to palette center, pulled 70% slower
+        if (
+            magnetActive &&
+            o.shapeType !== undefined &&
+            o.colorName === palette[colorIndex].name &&
+            !o.isPowerup && !o.isHeart && !o.isGolden
+        ) {
+            // Only attract if orb is below a third of the screen
+            if (o.y > H / 3) {
+                let paddleCx = paddleX + paddle.w / 2;
+                let paddleCy = getPaddleConfig().y + getPaddleConfig().h / 2;
+                const dx = paddleCx - o.x;
+                const dy = paddleCy - o.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 2) {
+                    o.x += dx * 0.13 * 0.3;
+                    o.y += dy * 0.11 * 0.3;
+                }
             }
         }
 
         o.rot += o.rotSpeed * dt * 60;
+
         if (o.bounceAnim) {
             o.bounceY += o.bounceDir * 18 * dt;
             if (o.bounceY > 28) o.bounceDir = -1;
@@ -381,8 +389,9 @@ function update(dt, now) {
                 o.bounceDir = 1;
             }
         }
+
         if (o.y - o.r > H) { orbs.splice(i, 1); continue; }
-        // Collision with paddle
+
         const px = paddleX, py = paddle.y, pw = paddle.w, ph = paddle.h;
         const cx = clamp(o.x, px, px + pw); const cy = clamp(o.y, py, py + ph);
         const dx = o.x - cx, dy = o.y - cy;
@@ -406,22 +415,18 @@ function update(dt, now) {
                     lives -= 1; flash = 160;
                 }
             }
-
             if (popupScore > 0) {
                 scorePopups.push({ x: o.x, y: o.y, val: '+' + popupScore, t: 0, color: o.fill });
             }
-
             orbs.splice(i, 1);
         }
     }
 
-    // Score popups
     for (let i = scorePopups.length - 1; i >= 0; i--) {
         scorePopups[i].t += dt;
         if (scorePopups[i].t > 0.9) scorePopups.splice(i, 1);
     }
 
-    // Palette swap
     if (now >= nextPaletteSwapAt) {
         const nextColor = palette[(colorIndex + 1) % palette.length];
         const currColor = palette[colorIndex];
@@ -448,8 +453,7 @@ function endGame() {
 
 function restart() {
     score = 0; lives = MAX_LIVES; orbs = [];
-    palette = PALETTE_BASE.slice();
-    colorIndex = Math.floor(Math.random() * palette.length);
+    palette = PALETTE_BASE.slice(); colorIndex = Math.floor(Math.random() * palette.length);
     nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
     lastSpawnAt = performance.now(); lastTime = performance.now(); elapsed = 0;
     paused = false; gameOver = false;
@@ -472,22 +476,9 @@ function togglePause() {
 
 // ==== RENDER DRAWING ====
 
-function drawBubbleAnimate(ctx, r, beatScale, bubbleColor = 'rgba(255,255,255,0.32)') {
-    ctx.save();
-    ctx.globalAlpha = 0.7;
-    ctx.beginPath();
-    ctx.arc(0, 0, r * 1.22 * beatScale, 0, Math.PI * 2);
-    ctx.fillStyle = bubbleColor;
-    ctx.shadowColor = '#fff9';
-    ctx.shadowBlur = 13;
-    ctx.fill();
-    ctx.restore();
-}
-
 function draw(now) {
     ctx.clearRect(0, 0, W, H);
     ctx.save();
-    // bg
     const bgWaveCount = 3;
     for (let i = 0; i < bgWaveCount; i++) {
         const t = now / 1000 + i * 2;
@@ -502,27 +493,36 @@ function draw(now) {
         ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
     }
     ctx.restore();
-
-    // Orbs & specials
     for (const o of orbs) {
         ctx.save();
         ctx.translate(o.x, o.y - (o.bounceAnim ? o.bounceY : 0));
         if (o.rot && !o.isHeart && !o.isPowerup && !o.isGolden) ctx.rotate(o.rot);
 
-        // Draw beating bubble
-        if (o.beating && o.bubble) drawBubbleAnimate(ctx, o.r, o.beatScale || 1);
+        // Bubble: nearly transparent, not beating
+        if (o.bubble) {
+            ctx.save();
+            ctx.globalAlpha = 0.09;
+            ctx.beginPath();
+            ctx.arc(0, 0, o.r * 1.15, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,255,255,0.22)";
+            ctx.shadowColor = "#fff";
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.restore();
+        }
 
-        // Draw shape
-        if (o.isHeart) { // heart
+        if (o.isHeart) {
             ctx.shadowBlur = 24; drawHeartPolygon(0, 0, o.r, HEART_COLOR);
-        } else if (o.isPowerup) {
-            ctx.shadowBlur = 10;
-            ctx.globalAlpha = 1.0;
-            drawPowerupIcon(ctx, o.powerupType, o.r * (o.beatScale || 1));
-        } else if (o.isGolden) {
-            ctx.shadowBlur = 32;
-            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, GOLDEN, true, (o.beatScale || 1));
-        } else if (o.shapeType === 'semicircle') {
+        }
+        else if (o.isPowerup) {
+            ctx.shadowBlur = 14; ctx.globalAlpha = 1.0;
+            drawPowerupIcon(ctx, o.powerupType, o.r);
+        }
+        else if (o.isGolden) {
+            ctx.shadowBlur = 26;
+            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, GOLDEN, true, o.beatScale || 1);
+        }
+        else if (o.shapeType === 'semicircle') {
             drawSemiCircle(ctx, o.r, o.fill);
         } else if (o.shapeType === 'triangle') {
             drawPolygon(ctx, 3, o.r, o.fill, o.rot);
@@ -539,7 +539,6 @@ function draw(now) {
         ctx.restore();
     }
 
-    // Score popups
     for (const popup of scorePopups) {
         ctx.save();
         ctx.globalAlpha = 1 - popup.t;
@@ -556,27 +555,19 @@ function draw(now) {
     let blinkNow = false;
     const timeLeft = (nextPaletteSwapAt - now) / 1000;
     if (palettePulse > 0) palettePulse -= 5;
-
     let padColor;
     let paletteScale = 1 + (palettePulse > 0 ? Math.max(0, Math.sin((palettePulse / 60) * Math.PI / 2)) * 0.25 : 0);
-    if (paddleBounce > 0) {
-        paletteScale += Math.sin(paddleBounce / 14 * Math.PI) * 0.16;
-        paddleBounce--;
-    }
+    if (paddleBounce > 0) paletteScale += Math.sin(paddleBounce / 14 * Math.PI) * 0.16, paddleBounce--;
 
     if (timeLeft <= 3 && timeLeft > 0) {
         if (!draw.blinkActive) { draw.blinkActive = true; draw.blinkInterval = now; draw.blinkState = false; }
         if (now - draw.blinkInterval > 200) { draw.blinkState = !draw.blinkState; draw.blinkInterval = now; }
         blinkNow = draw.blinkState;
     } else { draw.blinkActive = false; draw.blinkState = false; }
-    if (blinkNow) { padColor = palette[(colorIndex + 1) % palette.length].fill; }
-    else { padColor = palette[colorIndex].fill; }
+    padColor = blinkNow ? palette[(colorIndex + 1) % palette.length].fill : palette[colorIndex].fill;
 
     ctx.save();
-    ctx.translate(
-        paddleX + getPaddleConfig().w / 2,
-        getPaddleConfig().y + getPaddleConfig().h / 2
-    );
+    ctx.translate(paddleX + getPaddleConfig().w / 2, getPaddleConfig().y + getPaddleConfig().h / 2);
     ctx.scale(paletteScale, paletteScale);
     let paddleW = getPaddleConfig().w;
     let slimH = getPaddleConfig().h * 0.65;
@@ -591,18 +582,12 @@ function draw(now) {
     ctx.lineWidth = 2;
     ctx.globalAlpha = 1;
     ctx.strokeStyle = "#fff6";
-    ctx.strokeRect(
-        -paddleW / 2 + 1,
-        -slimH / 2 + 1,
-        paddleW - 2,
-        slimH - 2);
+    ctx.strokeRect(-paddleW / 2 + 1, -slimH / 2 + 1, paddleW - 2, slimH - 2);
     ctx.restore();
 
     if (pulse > 0) pulse -= 16;
-
     ctx.fillStyle = 'rgba(255,255,255,0.04)';
     ctx.fillRect(0, 0, W, 40);
-
     ctx.fillStyle = '#cfe4ff';
     ctx.font = Math.max(12, W * 0.012) + 'px system-ui, ui-sans-serif';
     ctx.fillText('Catch your color • Move mouse to steer', 18, 26);
@@ -611,37 +596,70 @@ function draw(now) {
 
     uiScore.textContent = score;
     uiTimer.textContent = Math.max(0, Math.ceil((nextPaletteSwapAt - now) / 1000));
-    uiCurrDot.style.background = palette[colorIndex].fill; uiCurrName.textContent = palette[colorIndex].name;
-    uiNextDot.style.background = palette[(colorIndex + 1) % palette.length].fill; uiNextName.textContent = palette[(colorIndex + 1) % palette.length].name;
-    const speedMul = Math.min(getBallBaseSpeed() / 160, MAX_BALL_SPEED / 160); uiSpeed.textContent = speedMul.toFixed(1) + 'x';
-
+    uiCurrDot.style.background = palette[colorIndex].fill;
     uiLives.innerHTML = '';
     for (let i = 0; i < MAX_LIVES; i++) {
         const s = document.createElement('span');
         s.className = 'heart-ui' + (i < lives ? '' : ' dim');
         uiLives.appendChild(s);
     }
+    if (document.getElementById('pwrShield')) document.getElementById('pwrShield').style.opacity = powerupTimers.shield > 0 ? 1 : 0.4;
+    if (document.getElementById('pwrClock')) document.getElementById('pwrClock').style.opacity = powerupTimers.clock > 0 ? 1 : 0.4;
+    if (document.getElementById('pwrMagnet')) document.getElementById('pwrMagnet').style.opacity = powerupTimers.magnet > 0 ? 1 : 0.4;
 
-    // Powerup indicators (if you have a designated div)
-    document.getElementById('pwrShield').style.opacity = powerupTimers.shield > 0 ? 1 : 0.4;
-    document.getElementById('pwrClock').style.opacity = powerupTimers.clock > 0 ? 1 : 0.4;
-    document.getElementById('pwrMagnet').style.opacity = powerupTimers.magnet > 0 ? 1 : 0.4;
+    if (mouseInGame) {
+        ctx.save();
+        // Use palette color (with blinking logic if desired)
+        let currPaletteColor = palette[colorIndex].fill;
+        let blink = false;
+        const timeLeft = (nextPaletteSwapAt - performance.now()) / 1000;
+        if (timeLeft <= 3 && timeLeft > 0) {
+            blink = Math.floor(performance.now() / 200) % 2 === 0;
+        }
+        if (blink) {
+            currPaletteColor = palette[(colorIndex + 1) % palette.length].fill;
+        }
+        // Pointer arrow coordinates
+        ctx.translate(mouseX, mouseY);
+        const SCALE = 1.5;
+        ctx.scale(SCALE, SCALE);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);      // tip
+        ctx.lineTo(0, 24);     // left
+        ctx.lineTo(7, 14);     // up right
+        ctx.lineTo(7, 14);     // up more left
+        ctx.lineTo(20, 12);    // right (horizontal part)
+        ctx.closePath();
+        ctx.fillStyle = currPaletteColor;
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = blink ? 16 : 0;
+        ctx.globalAlpha = 0.92;
+        ctx.fill();
+        // Border
+        ctx.lineWidth = 1.8;
+        ctx.globalAlpha = 0.63;
+        ctx.strokeStyle = "#111";
+        ctx.stroke();
+        ctx.restore();
+    }
 }
 
-// drawPowerupIcon: keeps it simple, for effect swap with appropriate emoji or SVG as you wish
+// ---- DRAW SHAPES ----
+//  icons for powerups
+
 function drawPowerupIcon(ctx, type, r) {
     ctx.save();
-    ctx.font = `bold ${r * 1.2}px Arial`;
+    ctx.font = `${r * 1.15}px Arial`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.95;
-    let emoji = '★';
+    let emoji = '❓';
     if (type === 'shield') emoji = '🛡️';
-    if (type === 'clock') emoji = '🕒';
-    if (type === 'magnet') emoji = '🧲';
-    ctx.fillText(emoji, 0, 2);
+    else if (type === 'clock') emoji = '⏰';
+    else if (type === 'magnet') emoji = '🧲';
+    ctx.fillText(emoji, 0, 2); // (x=0,y=2) centers nicely in orb
     ctx.restore();
 }
+
 
 function drawPolygon(ctx, sides, r, color, rotation = 0) {
     ctx.save(); ctx.rotate(rotation); ctx.beginPath();
@@ -695,9 +713,9 @@ function drawStar(ctx, cx, cy, outerR, innerR, points, color, twinkle, beatScale
     }
     ctx.closePath();
     ctx.fillStyle = color;
-    ctx.shadowColor = color;
-    ctx.shadowBlur = twinkle ? 36 : 24;
-    ctx.globalAlpha = twinkle ? (0.85 + 0.15 * Math.sin(Date.now() / 120)) : 1;
+    ctx.shadowColor = color == '#FFFFFF' ? '#eeeeee' : color;
+    ctx.shadowBlur = twinkle ? 40 : 24;
+    ctx.globalAlpha = twinkle ? (0.88 + 0.12 * Math.sin(Date.now() / 134)) : 1;
     ctx.fill();
     ctx.restore();
 }

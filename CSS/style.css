@@ -201,3 +201,7 @@ body.powerup-active #powerupBar span {
 .beating-anim {
     animation: beat-pop 0.7s infinite;
 }
+
+#game {
+    cursor: none;
+}
