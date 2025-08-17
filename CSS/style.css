@@ -29,20 +29,22 @@ body {
     padding: 25px;
     display: flex;
     align-items: center;
-    justify-content: center
+    justify-content: center;
 }
 
 canvas {
     display: block;
+    background: transparent;
+    z-index: 0;
 }
 
-/* HUD (inside game) */
 .hud-layer {
     position: fixed;
     left: 0;
     top: 0;
     right: 0;
-    pointer-events: none
+    pointer-events: none;
+    z-index: 2;
 }
 
 .hud-left,
@@ -51,19 +53,19 @@ canvas {
     padding: 14px;
     display: flex;
     gap: 10px;
-    align-items: center
+    align-items: center;
 }
 
 .hud-left {
     position: fixed;
     left: 14px;
-    top: 14px
+    top: 14px;
 }
 
 .hud-right {
     position: fixed;
     right: 14px;
-    top: 14px
+    top: 14px;
 }
 
 .chip {
@@ -75,7 +77,7 @@ canvas {
     background: rgba(10, 16, 24, 0.6);
     border: 1px solid rgba(255, 255, 255, 0.04);
     backdrop-filter: blur(6px);
-    font-weight: 600
+    font-weight: 600;
 }
 
 .dot {
@@ -83,17 +85,18 @@ canvas {
     height: 18px;
     border-radius: 50%;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    display: inline-block;
 }
 
 .small {
     font-size: 13px;
-    color: var(--muted)
+    color: var(--muted);
 }
 
 .hearts {
     display: inline-flex;
     gap: 6px;
-    align-items: center
+    align-items: center;
 }
 
 /* UI heart (CSS) - raw polygon (no rounded borders) */
@@ -102,14 +105,15 @@ canvas {
     height: 18px;
     background: var(--heart);
     clip-path: polygon(50% 80%, 0 40%, 20% 0, 50% 20%, 80% 0, 100% 40%);
-    opacity: 1
+    opacity: 1;
+    display: inline-block;
+    margin-right: 2px;
 }
 
 .heart-ui.dim {
-    opacity: 0.22
+    opacity: 0.22;
 }
 
-/* controls */
 .control-btn {
     appearance: none;
     border: 0;
@@ -118,21 +122,24 @@ canvas {
     padding: 8px 10px;
     border-radius: 10px;
     cursor: pointer;
-    font-weight: 700
+    font-weight: 700;
+    margin-left: 8px;
+    margin-bottom: 2px;
+    font-size: 16px;
 }
 
-/* overlay */
 .overlay {
     position: fixed;
     inset: 0;
     display: none;
     align-items: center;
     justify-content: center;
-    background: rgba(0, 0, 0, 0.55)
+    background: rgba(0, 0, 0, 0.55);
+    z-index: 10;
 }
 
 .overlay.show {
-    display: flex
+    display: flex;
 }
 
 .card {
@@ -141,5 +148,56 @@ canvas {
     border-radius: 12px;
     padding: 18px;
     min-width: 300px;
-    text-align: center
+    text-align: center;
+    color: var(--ink);
+    font-size: 18px;
+}
+
+/* Powerup indicator bar */
+#powerupBar {
+    min-width: 120px;
+    text-align: center;
+}
+
+#powerupBar span {
+    font-size: 22px;
+    padding: 0 7px;
+    transition: opacity 0.2s;
+    opacity: 0.4;
+}
+
+/* Highlight powerup when active */
+body.powerup-active #powerupBar span {
+    filter: drop-shadow(0 0 6px #ffe74c);
+}
+
+#powerupBar span[style*="opacity: 1"] {
+    opacity: 1 !important;
+    filter: drop-shadow(0 0 7px #fffdaa);
+}
+
+/* "Bubble" and "beating" animation for specials */
+@keyframes beat-pop {
+    0% {
+        transform: scale(1);
+    }
+
+    50% {
+        transform: scale(1.22);
+    }
+
+    100% {
+        transform: scale(1);
+    }
+}
+
+.bubble-special {
+    box-shadow: 0 0 12px 4px #fff8;
+    border-radius: 50%;
+    position: absolute;
+    pointer-events: none;
+}
+
+.beating-anim {
+    animation: beat-pop 0.7s infinite;
 }
