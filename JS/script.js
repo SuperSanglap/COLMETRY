@@ -5,9 +5,9 @@ const PALETTE_SWAP_SEC = 30;
 const MAX_LIVES = 3;
 const SCORE_GOLDEN = 100;
 const POWERUP_DURATION_SEC = 15;
-const POWERUP_MIN_SPAWN_DELAY = 5; // seconds between 2 powerups spawning
+const POWERUP_MIN_SPAWN_DELAY = 5;
 const SPAWN_EVERY_MS_BASE = 900;
-const MAX_BALL_SPEED = 1200;
+const MAX_BALL_SPEED = 1000;
 const PALETTE_BASE = [
     { name: 'Fluoro Red', fill: '#FF385F' },
     { name: 'Electric Orange', fill: '#FF7100' },
@@ -35,8 +35,8 @@ const POWERUP_TYPES = [
 const SPECIAL_OBJECTS = ['heart', 'goldenStar', ...POWERUP_TYPES.map(p => p.type)];
 
 const SPECIAL_ORB_SIZE = () => Math.max(20, Math.min(30, W * 0.017)); // all specials same size
-const ORBS_MIN = 3; // Start orb density
-const ORBS_MAX = 12; // Max orb density
+const ORBS_MIN = 4; // Start orb density
+const ORBS_MAX = 10; // Max orb density
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -140,12 +140,12 @@ function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0;
 
 // ==== SPAWN & ORBS ====
 const SHAPE_TYPES = [
-    { type: 'star', points: 45, speed: 1.1, weight: 3 },
-    { type: 'triangle', points: 13, speed: 0.9, weight: 13 },
-    { type: 'semicircle', points: 7, speed: 0.7, weight: 23 },
-    { type: 'square', points: 9, speed: 0.8, weight: 11 },
-    { type: 'pentagon', points: 18, speed: 1.2, weight: 7 },
-    { type: 'hexagon', points: 24, speed: 1.3, weight: 6 }
+    { type: 'semicircle', points: 5, speed: 0.4, weight: 35 },
+    { type: 'triangle', points: 10, speed: 0.5, weight: 30 },
+    { type: 'square', points: 15, speed: 0.6, weight: 25 },
+    { type: 'pentagon', points: 20, speed: 0.7, weight: 20 },
+    { type: 'hexagon', points: 25, speed: 0.8, weight: 15 },
+    { type: 'star', points: 30, speed: 0.9, weight: 10 },
 ];
 function nowMs() { return performance.now(); }
 
@@ -339,7 +339,10 @@ function update(dt, now) {
     const orbDensity = Math.floor(ORBS_MIN + (ORBS_MAX - ORBS_MIN) * progress);
 
     if (started && now - startTime > fallingDelay) {
-        const spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
+        let spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
+        if (powerupTimers.clock > 0) {
+            spawnEvery = spawnEvery * 2.5; // Or some other multiplier
+        }
         if (now - lastSpawnAt > spawnEvery) {
             lastSpawnAt = now;
             spawnOrbs(orbDensity);
@@ -357,7 +360,7 @@ function update(dt, now) {
             const t = (nowMs() - o.spawnTime) / 240;
             o.beatScale = 1 + Math.sin(t) * 0.18;
         }
-        // Magnet: attraction by displacement path to palette center, pulled 70% slower
+        // Magnet: attraction by displacement path to palette center
         if (
             magnetActive &&
             o.shapeType !== undefined &&
@@ -501,7 +504,7 @@ function draw(now) {
         // Bubble: nearly transparent, not beating
         if (o.bubble) {
             ctx.save();
-            ctx.globalAlpha = 0.09;
+            ctx.globalAlpha = 0.2;
             ctx.beginPath();
             ctx.arc(0, 0, o.r * 1.15, 0, Math.PI * 2);
             ctx.fillStyle = "rgba(255,255,255,0.22)";
