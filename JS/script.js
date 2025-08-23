@@ -35,8 +35,8 @@ const POWERUP_TYPES = [
 const SPECIAL_OBJECTS = ['heart', 'goldenStar', ...POWERUP_TYPES.map(p => p.type)];
 
 const SPECIAL_ORB_SIZE = () => Math.max(20, Math.min(30, W * 0.017)); // all specials same size
-const ORBS_MIN = 4; // Start orb density
-const ORBS_MAX = 10; // Max orb density
+const ORBS_MIN = 3; // Start orb density
+const ORBS_MAX = 8; // Max orb density
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
@@ -124,10 +124,9 @@ resetPaddle();
 canvas.addEventListener('pointermove', ev => {
     const rect = canvas.getBoundingClientRect();
     const mx = ((ev.clientX - rect.left) / rect.width) * W;
-    mouseX = mx; // update for cursor
+    mouseX = mx;
     mouseY = ((ev.clientY - rect.top) / rect.height) * H;
 
-    // Move palette so its center matches the pointer's X
     paddleX = clamp(mx - getPaddleConfig().w / 2, 0, W - getPaddleConfig().w);
     mouseInGame = true;
 });
@@ -152,10 +151,8 @@ function nowMs() { return performance.now(); }
 let canSpawnPowerup = true;
 let lastPowerupType = null; function pickShapeTypeWeighted(usedShapes) {
     const viable = SHAPE_TYPES.filter(s => !usedShapes.includes(s.type));
-    // If none left, reset usedShapes so all are viable again
     if (viable.length === 0) {
-        usedShapes.length = 0; // clear usedShapes!
-        // recalc viable array
+        usedShapes.length = 0;
         return pickShapeTypeWeighted(usedShapes);
     }
     const total = viable.reduce((a, s) => a + s.weight, 0);
@@ -589,11 +586,7 @@ function draw(now) {
     ctx.restore();
 
     if (pulse > 0) pulse -= 16;
-    ctx.fillStyle = 'rgba(255,255,255,0.04)';
-    ctx.fillRect(0, 0, W, 40);
-    ctx.fillStyle = '#cfe4ff';
-    ctx.font = Math.max(12, W * 0.012) + 'px system-ui, ui-sans-serif';
-    ctx.fillText('Catch your color • Move mouse to steer', 18, 26);
+
 
     if (flash > 0) { ctx.save(); ctx.fillStyle = `rgba(255,0,0,${flash / 480})`; ctx.fillRect(0, 0, W, H); ctx.restore(); flash -= 16; }
 

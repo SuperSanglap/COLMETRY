@@ -12,7 +12,6 @@
     <div class="game-container">
         <canvas id="game"></canvas>
 
-        <!-- HUD Layer (score, lives, color info, etc.) -->
         <div class="hud-layer">
             <div class="hud-left">
                 <div class="chip"><span id="uiScore">0</span> <span class="small">Score</span></div>
@@ -27,7 +26,6 @@
             </div>
         </div>
 
-        <!-- Powerup status bar -->
         <div class="hud-layer" style="top:84px">
             <div class="chip" id="powerupBar">
                 <span id="pwrShield" title="Shield Powerup">🛡️</span>
@@ -36,17 +34,14 @@
             </div>
         </div>
 
-        <!-- Controls -->
         <div style="position:fixed;bottom:14px;right:14px;z-index:9">
             <button class="control-btn" id="btnMusic">Music</button>
             <button class="control-btn" id="btnPause">Pause</button>
             <button class="control-btn" id="btnRestart">Restart</button>
         </div>
 
-        <!-- (Hidden) Music element -->
         <audio id="bgm" loop></audio>
 
-        <!-- Overlay Game Over -->
         <div class="overlay" id="overlay">
             <div class="card">
                 <div id="overlayText"></div>

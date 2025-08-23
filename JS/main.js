@@ -1,6 +1,3 @@
-// main.js -- Handles non-game website controls: music, buttons, overlays
-
-// Play/pause and restart buttons (calls functions from script.js)
 document.getElementById('btnPause').addEventListener('click', () => {
     if (window.togglePause) window.togglePause();
 });
@@ -11,7 +8,6 @@ document.getElementById('btnOverlayRestart').addEventListener('click', () => {
     if (window.restart) window.restart();
 });
 
-// Music controls
 const bgm = document.getElementById('bgm');
 let musicOn = false;
 document.getElementById('btnMusic').addEventListener('click', () => {
@@ -29,5 +25,3 @@ document.getElementById('btnMusic').addEventListener('click', () => {
         document.getElementById('btnMusic').textContent = 'Music';
     }
 });
-
-// You can add additional generic website logic here if needed.

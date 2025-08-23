@@ -99,7 +99,6 @@ canvas {
     align-items: center;
 }
 
-/* UI heart (CSS) - raw polygon (no rounded borders) */
 .heart-ui {
     width: 18px;
     height: 18px;
@@ -153,7 +152,6 @@ canvas {
     font-size: 18px;
 }
 
-/* Powerup indicator bar */
 #powerupBar {
     min-width: 120px;
     text-align: center;
@@ -166,7 +164,6 @@ canvas {
     opacity: 0.4;
 }
 
-/* Highlight powerup when active */
 body.powerup-active #powerupBar span {
     filter: drop-shadow(0 0 6px #ffe74c);
 }
@@ -176,7 +173,6 @@ body.powerup-active #powerupBar span {
     filter: drop-shadow(0 0 7px #fffdaa);
 }
 
-/* "Bubble" and "beating" animation for specials */
 @keyframes beat-pop {
     0% {
         transform: scale(1);
