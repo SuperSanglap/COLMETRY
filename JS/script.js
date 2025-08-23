@@ -33,8 +33,8 @@ const POWERUP_TYPES = [
 const SPECIAL_OBJECTS = ['heart', 'goldenStar', ...POWERUP_TYPES.map(p => p.type)];
 
 const SPECIAL_ORB_SIZE = () => Math.max(20, Math.min(30, W * 0.017)); // all specials same size
-const ORBS_MIN = 2; // Start orb density
-const ORBS_MAX = 7; // Max orb density
+const ORBS_MIN = 3; // Start orb density
+const ORBS_MAX = 10; // Max orb density
 
 const canvas = document.getElementById('game');
 const ctx = canvas.getContext('2d');
