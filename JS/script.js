@@ -1,4 +1,122 @@
-// ===== CONFIG =====
+// ===== CONFIG & UI BOOTSTRAP =====
+// Mobile detection
+function isMobile() {
+    return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+}
+
+// Show overlays and block game on mobile
+window.addEventListener('DOMContentLoaded', function() {
+    // Render animated background for start overlay
+    function drawStartBg() {
+        const canvas = document.getElementById('startBgCanvas');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const W = window.innerWidth;
+        const H = window.innerHeight;
+        canvas.width = W;
+        canvas.height = H;
+        ctx.clearRect(0, 0, W, H);
+        // Opaque background
+        ctx.fillStyle = '#0e1a24';
+        ctx.fillRect(0, 0, W, H);
+        // Animated waves (like game bg)
+        const bgWaveCount = 3;
+        const now = performance.now();
+        for (let i = 0; i < bgWaveCount; i++) {
+            const t = now / 1000 + i * 2;
+            ctx.globalAlpha = 0.13 + 0.09 * Math.sin(t + i);
+            const grad = ctx.createLinearGradient(0, 0, W, H);
+            grad.addColorStop(0, `hsl(${200 + i * 30}, 80%, 22%)`);
+            grad.addColorStop(1, `hsl(${220 + i * 30}, 90%, 14%)`);
+            ctx.fillStyle = grad;
+            ctx.beginPath();
+            ctx.moveTo(0, H * (0.2 + 0.2 * Math.sin(t)));
+            for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * (0.2 + 0.2 * Math.sin(t + x / 200 + i)));
+            ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+    }
+    function animateStartBg() {
+        drawStartBg();
+        if (document.getElementById('tutorialOverlay').style.display === 'flex') {
+            requestAnimationFrame(animateStartBg);
+        }
+    }
+    // Render multi-colored title
+    function renderColoroidTitle() {
+        const title = 'COLOROID';
+        const colors = [
+            '#FF385F', '#FF7100', '#FFE925', '#73FA2E', '#11B5EA', '#9C1DF8', '#fff', '#00FFD0', '#FF4B4B', '#FFA33C', '#FFD93D', '#4ADE80', '#60A5FA', '#A78BFA'
+        ];
+        const el = document.getElementById('coloroidTitle');
+        if (!el) return;
+        el.innerHTML = '';
+        for (let i = 0; i < title.length; i++) {
+            const span = document.createElement('span');
+            span.textContent = title[i];
+            span.style.color = colors[Math.floor(Math.random() * colors.length)];
+            el.appendChild(span);
+        }
+    }
+    // On overlay show, render bg and title
+    if (document.getElementById('tutorialOverlay').style.display === 'flex') {
+        renderColoroidTitle();
+        animateStartBg();
+    }
+    // Re-render on resize
+    window.addEventListener('resize', function() {
+        if (document.getElementById('tutorialOverlay').style.display === 'flex') {
+            drawStartBg();
+        }
+    });
+    const tutorial = document.getElementById('tutorialOverlay');
+    const mobile = document.getElementById('mobileOverlay');
+    const gameContainer = document.querySelector('.game-container');
+    if (isMobile()) {
+        if (tutorial) tutorial.style.display = 'none';
+        if (mobile) mobile.style.display = 'flex';
+        if (gameContainer) gameContainer.style.pointerEvents = 'none';
+        return;
+    }
+    // Show tutorial overlay
+    if (tutorial) tutorial.style.display = 'flex';
+    if (gameContainer) gameContainer.style.pointerEvents = 'none';
+
+    // Click to play handler (anywhere on overlay)
+    function startGameFromTutorial(e) {
+    // Hide overlay bg canvas
+    const startBgCanvas = document.getElementById('startBgCanvas');
+    if (startBgCanvas) startBgCanvas.style.display = 'none';
+        // Only allow click if overlay is visible
+        if (tutorial && tutorial.style.display !== 'flex') return;
+        // Prevent accidental double start
+        if (!window._coloroidGameBlocked) return;
+        // Hide overlay and enable game
+        tutorial.style.display = 'none';
+        if (gameContainer) gameContainer.style.pointerEvents = '';
+        // Fullscreen
+        if (document.documentElement.requestFullscreen) {
+            document.documentElement.requestFullscreen();
+        } else if (document.documentElement.webkitRequestFullscreen) {
+            document.documentElement.webkitRequestFullscreen();
+        }
+        // Actually start game
+        if (typeof window.startColoroidGame === 'function') {
+            window.startColoroidGame();
+        }
+    }
+    if (tutorial) {
+        tutorial.addEventListener('click', startGameFromTutorial);
+        // Also allow pressing Enter/Space to start
+        window.addEventListener('keydown', function(e) {
+            if (window._coloroidGameBlocked && (e.code === 'Enter' || e.code === 'Space')) {
+                startGameFromTutorial();
+            }
+        });
+    }
+    // Prevent game loop until click
+    window._coloroidGameBlocked = true;
+});
 const PALETTE_SWAP_SEC = 30;
 const MAX_LIVES = 3;
 const SCORE_GOLDEN = 100;
@@ -182,7 +300,9 @@ function spawnOrbs(orbsPerSpawn) {
     prevSpawnShapes = [];
     const colorOrder = chooseColors(orbsPerSpawn, colorIndex);
 
+    // Only allow one heart in orbs or in this spawn batch
     const heartCount = orbs.reduce((count, orb) => count + (orb.isHeart ? 1 : 0), 0);
+    let heartSpawnedThisBatch = false;
     const powerupCount = orbs.reduce((count, orb) => orb.isPowerup ? count + 1 : count, 0);
 
     for (let i = 0; i < orbsPerSpawn; i++) {
@@ -197,8 +317,11 @@ function spawnOrbs(orbsPerSpawn) {
         prevSpawnShapes.push(shapeObj.type);
 
         let isHeart = false;
-        if (!isHeart && lives < MAX_LIVES && heartCount === 0) {
-            if (Math.random() < 0.1) isHeart = true;
+        if (!isHeart && lives < MAX_LIVES && heartCount === 0 && !heartSpawnedThisBatch) {
+            if (Math.random() < 0.1) {
+                isHeart = true;
+                heartSpawnedThisBatch = true;
+            }
         }
 
         let isPowerup = false;
@@ -372,6 +495,10 @@ function update(dt, now) {
                 if (dist > 2) {
                     o.x += dx * 0.13 * 0.3;
                     o.y += dy * 0.11 * 0.3;
+                    // Clamp so orb never goes below paddle
+                    const minY = 0;
+                    const maxY = getPaddleConfig().y - o.r - 2;
+                    o.y = Math.max(minY, Math.min(o.y, maxY));
                 }
             }
         }
@@ -715,7 +842,8 @@ function drawStar(ctx, cx, cy, outerR, innerR, points, color, twinkle, beatScale
 }
 
 function loop(now) {
-    if (paused || gameOver) return;
+    // Block game loop if not started (e.g. before click-to-play)
+    if (paused || gameOver || window._coloroidGameBlocked) return;
     if (!lastTime) lastTime = now;
     const dt = Math.min(0.033, Math.max(0.008, (now - lastTime) / 1000));
     lastTime = now; elapsed += dt;
@@ -742,4 +870,15 @@ function init() {
     requestAnimationFrame(loop);
 }
 
-init();
+// Only start game after tutorial click
+window.startColoroidGame = function() {
+    if (window._coloroidGameBlocked) {
+        window._coloroidGameBlocked = false;
+        init();
+    }
+};
+
+// If not blocked, start immediately (for reloads, dev, etc)
+if (!window._coloroidGameBlocked) {
+    init();
+}

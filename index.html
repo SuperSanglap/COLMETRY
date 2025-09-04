@@ -29,7 +29,7 @@
         <div class="hud-layer" style="top:84px">
             <div class="chip" id="powerupBar">
                 <span id="pwrShield" title="Shield Powerup">🛡️</span>
-                <span id="pwrClock" title="Clock Powerup">🕒</span>
+                <span id="pwrClock" title="Clock Powerup">⏰</span>
                 <span id="pwrMagnet" title="Magnet Powerup">🧲</span>
             </div>
         </div>
@@ -46,6 +46,31 @@
             <div class="card">
                 <div id="overlayText"></div>
                 <button class="control-btn" id="btnOverlayRestart">Restart</button>
+            </div>
+        </div>
+        <!-- Start Screen Overlay -->
+    <div class="overlay start-overlay" id="tutorialOverlay" style="display:flex;">
+        <canvas id="startBgCanvas" class="start-bg-canvas"></canvas>
+        <div class="start-content">
+            <div id="coloroidTitle" class="game-title"></div>
+            <div class="card">
+                <h2>How to Play</h2>
+                <ul style="text-align:left;max-width:400px;margin:0 auto 1em auto;">
+                    <li>Move your mouse to control the paddle.</li>
+                    <li>Hold <b>left mouse button</b> to shrink the paddle for precision.</li>
+                    <li>Catch orbs matching the current color for points.</li>
+                    <li>Avoid wrong colors, collect powerups, and survive!</li>
+                </ul>
+                <div class="start-cta">Click anywhere to play</div>
+            </div>
+        </div>
+    </div>
+
+        <!-- Mobile Block Overlay -->
+        <div class="overlay" id="mobileOverlay" style="display:none;">
+            <div class="card">
+                <h2>PC Only</h2>
+                <p>This game is designed for desktop/laptop computers.<br>Please open on a PC for the best experience.</p>
             </div>
         </div>
     </div>

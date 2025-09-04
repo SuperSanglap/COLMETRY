@@ -1,3 +1,95 @@
+.start-overlay {
+    cursor: pointer;
+    pointer-events: auto;
+    background: #0e1a24;
+    overflow: hidden;
+    z-index: 1000;
+}
+.start-bg-canvas {
+    position: absolute;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 0;
+    display: block;
+    pointer-events: none;
+}
+.start-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+}
+.game-title {
+    font-size: 3.2em;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2em;
+    margin-top: 0.2em;
+    text-align: center;
+    display: flex;
+    justify-content: center;
+    gap: 0.05em;
+}
+.game-title span {
+    font-family: 'Segoe UI Black', 'Arial Black', Impact, fantasy, sans-serif;
+    font-size: 1em;
+    font-weight: 900;
+    text-shadow: 0 4px 32px #0008, 0 1px 0 #fff, 0 0 8px #0ff8;
+    transition: color 0.2s;
+}
+.start-cta {
+    margin: 1.5em 0 0.5em 0;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 12px #3fd0ff88;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.start-cta:hover {
+    color: #3fd0ff;
+}
+.start-content {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 600px;
+}
+.game-title {
+    font-size: 3.2em;
+    font-weight: 900;
+    letter-spacing: 0.04em;
+    margin-bottom: 0.2em;
+    margin-top: 0.2em;
+    color: #3fd0ff;
+    text-shadow: 0 4px 32px #3fd0ff55, 0 1px 0 #fff, 0 0 8px #0ff8;
+    text-align: center;
+}
+.start-cta {
+    margin: 1.5em 0 0.5em 0;
+    font-size: 1.3em;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 0 2px 12px #3fd0ff88;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+.start-cta:hover {
+    color: #3fd0ff;
+}
+@keyframes start-bg-anim {
+    0% { background-position: 60% 40%; }
+    100% { background-position: 40% 60%; }
+}
 :root {
     --bg: #081017;
     --panel: #0f1720;
