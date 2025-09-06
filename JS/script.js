@@ -485,8 +485,8 @@ function update(dt, now) {
             o.colorName === palette[colorIndex].name &&
             !o.isPowerup && !o.isHeart && !o.isGolden
         ) {
-            // Only attract if orb is below a third of the screen
-            if (o.y > H / 3) {
+            // Only attract after orb has fallen 30% of the screen height
+            if (o.y > H * 0.3) {
                 let paddleCx = paddleX + paddle.w / 2;
                 let paddleCy = getPaddleConfig().y + getPaddleConfig().h / 2;
                 const dx = paddleCx - o.x;
@@ -495,12 +495,9 @@ function update(dt, now) {
                 if (dist > 2) {
                     o.x += dx * 0.13 * 0.3;
                     o.y += dy * 0.11 * 0.3;
-                    // Clamp so orb never goes below paddle
-                    const minY = 0;
-                    const maxY = getPaddleConfig().y - o.r - 2;
-                    o.y = Math.max(minY, Math.min(o.y, maxY));
                 }
             }
+            // No auto-collect here; let normal collision handle it
         }
 
         o.rot += o.rotSpeed * dt * 60;
