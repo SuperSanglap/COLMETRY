@@ -265,8 +265,11 @@ canvas.addEventListener('pointerleave', () => {
 });
 canvas.addEventListener('pointerdown', ev => {
     if (ev.button === 0) {
-        paddleShrinkActive = true;
-        paddleShrinkTarget = 0.5;
+        // Only allow shrink if enough mana
+        if (mana > 0) {
+            paddleShrinkActive = true;
+            paddleShrinkTarget = 0.5;
+        }
     }
 });
 canvas.addEventListener('pointerup', ev => {
@@ -557,6 +560,7 @@ function update(dt, now) {
             let popupScore = 0;
             if (o.isGolden) {
                 score += SCORE_GOLDEN; popupScore = SCORE_GOLDEN;
+                mana = Math.min(maxMana, mana + SCORE_GOLDEN); // Golden star points also add to mana
             } else if (o.isHeart) {
                 lives = Math.min(MAX_LIVES, lives + 1);
             } else if (o.isPowerup) {
@@ -566,6 +570,7 @@ function update(dt, now) {
                 score += o.shapePoints; popupScore = o.shapePoints;
                 o.bounceAnim = true; o.bounceY = 0; o.bounceDir = 1;
                 paddleBounce = 14;
+                mana = Math.min(maxMana, mana + o.shapePoints); // 10 points = 10 mana
             } else {
                 if (powerupTimers.shield > 0) {
                     // Immune from losing life
@@ -598,6 +603,19 @@ function update(dt, now) {
         palettePulse = 80;
     }
 
+    // Shrink consumes mana
+    if (paddleShrinkActive && mana > 0) {
+        mana -= (dt * 10 * maxMana) / 100; // 10% per second
+        if (mana <= 0) {
+            mana = 0;
+            paddleShrinkActive = false;
+            paddleShrinkTarget = 1;
+        }
+    }
+    // Clamp mana
+    mana = Math.max(0, Math.min(maxMana, mana));
+    updateManaBar();
+
     score = Math.max(0, score);
     lives = Math.max(0, Math.min(MAX_LIVES, lives));
     if (lives <= 0 && !gameOver) { endGame(); }
@@ -610,20 +628,25 @@ function endGame() {
 }
 
 function restart() {
-    score = 0; lives = MAX_LIVES; orbs = [];
-    palette = PALETTE_BASE.slice(); colorIndex = Math.floor(Math.random() * palette.length);
+    score = 0;
+    lives = MAX_LIVES;
+    mana = maxMana;
+    orbs = [];
+    palette = PALETTE_BASE.slice();
+    colorIndex = Math.floor(Math.random() * palette.length);
     nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
-    lastSpawnAt = performance.now(); lastTime = performance.now();
-    elapsed = 0; // Reset elapsed so speed starts normal
-    paused = false; gameOver = false;
-    overlayEl.classList.remove('show'); resetPaddle();
-    prevSpawnXs = [null, null]; prevSpawnShapes = [];
-    palettePulse = 0;
-    started = false;
-    fallingDelay = 2000; // Reset fallingDelay to default
-    powerupTimers = { shield: 0, clock: 0, magnet: 0 };
-    canSpawnPowerup = true;
-    startTime = performance.now();
+    lastSpawnAt = performance.now();
+    lastTime = performance.now();
+    elapsed = 0;
+    paused = false;
+    gameOver = false;
+    overlayEl.classList.remove('show');
+    resetPaddle();
+    paddleShrinkActive = false;
+    paddleShrinkTarget = 1;
+    paddleShrinkCurrent = 1;
+    paddleBounceAnim = 0;
+    updateManaBar();
     // Hide mouse pointer on restart
     const gameCanvas = document.getElementById('game');
     if (gameCanvas) gameCanvas.style.cursor = 'none';
@@ -927,6 +950,9 @@ function init() {
     started = false;
     canSpawnPowerup = true;
     startTime = performance.now();
+    // Hide mouse pointer on restart
+    const gameCanvas = document.getElementById('game');
+    if (gameCanvas) gameCanvas.style.cursor = 'none';
     setTimeout(() => { started = true; }, fallingDelay);
     requestAnimationFrame(loop);
 }
@@ -942,4 +968,481 @@ window.startColoroidGame = function() {
 // If not blocked, start immediately (for reloads, dev, etc)
 if (!window._coloroidGameBlocked) {
     init();
+}
+
+let mana = 200;
+const maxMana = 200;
+let manaBarEl = null;
+
+window.addEventListener('DOMContentLoaded', function() {
+    // Add mana bar to HUD (top left, below health, above powerups)
+    manaBarEl = document.createElement('div');
+    manaBarEl.id = 'manaBar';
+    manaBarEl.style.position = 'absolute';
+    manaBarEl.style.left = '18px';
+    manaBarEl.style.top = '54px';
+    manaBarEl.style.width = '120px';
+    manaBarEl.style.height = '16px';
+    manaBarEl.style.background = '#222';
+    manaBarEl.style.border = '2px solid #00ffd0';
+    manaBarEl.style.borderRadius = '3px';
+    manaBarEl.style.boxShadow = '0 2px 8px #00ffd0, 0 0 12px #00ffd0cc inset';
+    manaBarEl.style.zIndex = '20';
+    manaBarEl.innerHTML = '<div id="manaBarFill" style="height:100%;width:100%;background:linear-gradient(90deg,#00ffd0 60%,#00bfff 100%);border-radius:2px;box-shadow:0 0 16px #00ffd0cc,0 0 8px #00ffd0 inset;transition:width 0.2s"></div>';
+    // Place in HUD left
+    const hudLeft = document.querySelector('.hud-left');
+    if (hudLeft) hudLeft.appendChild(manaBarEl);
+    else document.body.appendChild(manaBarEl);
+});
+
+function updateManaBar() {
+    if (!manaBarEl) return;
+    const fill = document.getElementById('manaBarFill');
+    if (fill) fill.style.width = Math.max(0, Math.min(1, mana / maxMana)) * 100 + '%';
+}
+
+// Update logic
+function update(dt, now) {
+    // Smoothly animate paddle shrink/grow
+    const lerpSpeed = 0.13 + 0.25 * dt;
+    paddleShrinkCurrent += (paddleShrinkTarget - paddleShrinkCurrent) * lerpSpeed;
+    if (Math.abs(paddleShrinkCurrent - paddleShrinkTarget) < 0.01) paddleShrinkCurrent = paddleShrinkTarget;
+
+    const paddle = getPaddleConfig();
+    paddle.w = getPaddleWidth();
+    paddleX = clamp(paddleX, paddle.w / 2, W - paddle.w / 2);
+
+    updatePowerups(dt);
+
+    // Orbs density grows with time
+    const progress = Math.min(elapsed / 35, 1); // Full after 35 seconds
+    const orbDensity = Math.floor(ORBS_MIN + (ORBS_MAX - ORBS_MIN) * progress);
+
+    if (started && now - startTime > fallingDelay) {
+        let spawnEvery = Math.max(220, SPAWN_EVERY_MS_BASE - Math.floor(elapsed) * 2);
+        if (powerupTimers.clock > 0) {
+            spawnEvery = spawnEvery * 2.5; // Or some other multiplier
+        }
+        if (now - lastSpawnAt > spawnEvery) {
+            lastSpawnAt = now;
+            spawnOrbs(orbDensity);
+        }
+    }
+
+    const magnetActive = powerupTimers.magnet > 0;
+
+    for (let i = orbs.length - 1; i >= 0; i--) {
+        const o = orbs[i];
+        if (o.isPowerup && (o.y > H)) { orbs.splice(i, 1); canSpawnPowerup = true; continue; }
+        o.y += o.vy * dt * (powerupTimers.clock > 0 && !o.isPowerup ? 0.4 : 1);
+
+        if (o.beating) {
+            const t = (nowMs() - o.spawnTime) / 240;
+            o.beatScale = 1 + Math.sin(t) * 0.18;
+        }
+        // Magnet: attraction by displacement path to palette center
+        if (
+            magnetActive &&
+            o.shapeType !== undefined &&
+            o.colorName === palette[colorIndex].name &&
+            !o.isPowerup && !o.isHeart && !o.isGolden
+        ) {
+            // Only attract after orb has fallen 30% of the screen height
+            if (o.y > H * 0.3) {
+                let paddleCx = paddleX;
+                let paddleCy = getPaddleConfig().y + getPaddleConfig().h / 2;
+                const dx = paddleCx - o.x;
+                const dy = paddleCy - o.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist > 2) {
+                    o.x += dx * 0.13 * 0.3;
+                    o.y += dy * 0.11 * 0.3;
+                }
+            }
+        }
+
+        o.rot += o.rotSpeed * dt * 60;
+
+        if (o.bounceAnim) {
+            o.bounceY += o.bounceDir * 18 * dt;
+            if (o.bounceY > 28) o.bounceDir = -1;
+            if (o.bounceY < 0) {
+                o.bounceY = 0;
+                o.bounceAnim = false;
+                o.bounceDir = 1;
+            }
+        }
+
+        if (o.y - o.r > H) { orbs.splice(i, 1); continue; }
+
+        const px = paddleX, py = paddle.y, pw = paddle.w, ph = paddle.h;
+    const cx = clamp(o.x, px - pw / 2, px + pw / 2); const cy = clamp(o.y, py, py + ph);
+        const dx = o.x - cx, dy = o.y - cy;
+        if (dx * dx + dy * dy <= o.r * o.r) {
+            let popupScore = 0;
+            if (o.isGolden) {
+                score += SCORE_GOLDEN; popupScore = SCORE_GOLDEN;
+                mana = Math.min(maxMana, mana + SCORE_GOLDEN); // Golden star points also add to mana
+            } else if (o.isHeart) {
+                lives = Math.min(MAX_LIVES, lives + 1);
+            } else if (o.isPowerup) {
+                activatePowerup(o.powerupType);
+                canSpawnPowerup = true;
+            } else if (o.colorName === palette[colorIndex].name) {
+                score += o.shapePoints; popupScore = o.shapePoints;
+                o.bounceAnim = true; o.bounceY = 0; o.bounceDir = 1;
+                paddleBounce = 14;
+                mana = Math.min(maxMana, mana + o.shapePoints); // 10 points = 10 mana
+            } else {
+                if (powerupTimers.shield > 0) {
+                    // Immune from losing life
+                } else {
+                    lives -= 1; flash = 160;
+                }
+            }
+            if (popupScore > 0) {
+                scorePopups.push({ x: o.x, y: o.y, val: '+' + popupScore, t: 0, color: o.fill });
+            }
+            orbs.splice(i, 1);
+        }
+    }
+
+    for (let i = scorePopups.length - 1; i >= 0; i--) {
+        scorePopups[i].t += dt;
+        if (scorePopups[i].t > 0.9) scorePopups.splice(i, 1);
+    }
+
+    if (now >= nextPaletteSwapAt) {
+        const nextColor = palette[(colorIndex + 1) % palette.length];
+        const currColor = palette[colorIndex];
+        const rest = palette.slice(); rest.splice(colorIndex, 1);
+        const shuffled = shuffle(rest);
+        const newCurrIdx = Math.floor(Math.random() * (shuffled.length + 1));
+        shuffled.splice(newCurrIdx, 0, currColor);
+        palette = shuffled;
+        colorIndex = palette.findIndex(c => c.name === nextColor.name);
+        nextPaletteSwapAt = now + PALETTE_SWAP_SEC * 1000;
+        palettePulse = 80;
+    }
+
+    // Shrink consumes mana
+    if (paddleShrinkActive && mana > 0) {
+        mana -= (dt * 10 * maxMana) / 100; // 10% per second
+        if (mana <= 0) {
+            mana = 0;
+            paddleShrinkActive = false;
+            paddleShrinkTarget = 1;
+        }
+    }
+    // Clamp mana
+    mana = Math.max(0, Math.min(maxMana, mana));
+    updateManaBar();
+
+    score = Math.max(0, score);
+    lives = Math.max(0, Math.min(MAX_LIVES, lives));
+    if (lives <= 0 && !gameOver) { endGame(); }
+}
+
+function endGame() {
+    gameOver = true; paused = true;
+    overlayEl.classList.add('show');
+    document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
+}
+
+function restart() {
+    score = 0;
+    lives = MAX_LIVES;
+    mana = maxMana;
+    orbs = [];
+    palette = PALETTE_BASE.slice();
+    colorIndex = Math.floor(Math.random() * palette.length);
+    nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
+    lastSpawnAt = performance.now();
+    lastTime = performance.now();
+    elapsed = 0;
+    paused = false;
+    gameOver = false;
+    overlayEl.classList.remove('show');
+    resetPaddle();
+    paddleShrinkActive = false;
+    paddleShrinkTarget = 1;
+    paddleShrinkCurrent = 1;
+    paddleBounceAnim = 0;
+    updateManaBar();
+    // Hide mouse pointer on restart
+    const gameCanvas = document.getElementById('game');
+    if (gameCanvas) gameCanvas.style.cursor = 'none';
+    setTimeout(() => { started = true; }, fallingDelay);
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+    animationFrameId = requestAnimationFrame(loop);
+}
+
+function togglePause() {
+    if (gameOver) return;
+    paused = !paused;
+    window.paused = paused;
+    // Toggle Font Awesome play/pause icons
+    if (typeof window.syncPlayPauseIcon === 'function') {
+        window.syncPlayPauseIcon();
+    }
+    // Show mouse pointer when paused
+    const gameCanvas = document.getElementById('game');
+    if (gameCanvas) gameCanvas.style.cursor = paused ? 'default' : 'none';
+    if (!paused) { lastTime = performance.now(); requestAnimationFrame(loop); }
+}
+
+// ==== RENDER DRAWING ====
+
+function draw(now) {
+    ctx.clearRect(0, 0, W, H);
+    ctx.save();
+    const bgWaveCount = 3;
+    for (let i = 0; i < bgWaveCount; i++) {
+        const t = now / 1000 + i * 2;
+        ctx.globalAlpha = 0.10 + 0.07 * Math.sin(t + i);
+        const grad = ctx.createLinearGradient(0, 0, W, H);
+        grad.addColorStop(0, `hsl(${200 + i * 30}, 80%, 18%)`);
+        grad.addColorStop(1, `hsl(${220 + i * 30}, 90%, 12%)`);
+        ctx.fillStyle = grad;
+        ctx.beginPath();
+        ctx.moveTo(0, H * (0.2 + 0.2 * Math.sin(t)));
+        for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * (0.2 + 0.2 * Math.sin(t + x / 200 + i)));
+        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+    for (const o of orbs) {
+        ctx.save();
+        ctx.translate(o.x, o.y - (o.bounceAnim ? o.bounceY : 0));
+        if (o.rot && !o.isHeart && !o.isPowerup && !o.isGolden) ctx.rotate(o.rot);
+
+        // Bubble: nearly transparent, not beating
+        if (o.bubble) {
+            ctx.save();
+            ctx.globalAlpha = 0.2;
+            ctx.beginPath();
+            ctx.arc(0, 0, o.r * 1.15, 0, Math.PI * 2);
+            ctx.fillStyle = "rgba(255,255,255,0.22)";
+            ctx.shadowColor = "#fff";
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.restore();
+        }
+
+        if (o.isHeart) {
+            ctx.shadowBlur = 24; drawHeartPolygon(0, 0, o.r, HEART_COLOR);
+        }
+        else if (o.isPowerup) {
+            ctx.shadowBlur = 14; ctx.globalAlpha = 1.0;
+            drawPowerupIcon(ctx, o.powerupType, o.r);
+        }
+        else if (o.isGolden) {
+            ctx.shadowBlur = 26;
+            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, GOLDEN, true, o.beatScale || 1);
+        }
+        else if (o.shapeType === 'semicircle') {
+            drawSemiCircle(ctx, o.r, o.fill);
+        } else if (o.shapeType === 'triangle') {
+            drawPolygon(ctx, 3, o.r, o.fill, o.rot);
+        } else if (o.shapeType === 'square') {
+            ctx.beginPath(); ctx.rect(-o.r * 0.6, -o.r * 0.6, o.r * 1.2, o.r * 1.2);
+            ctx.fillStyle = o.fill; ctx.fill();
+        } else if (o.shapeType === 'pentagon') {
+            drawPolygon(ctx, 5, o.r, o.fill, o.rot);
+        } else if (o.shapeType === 'hexagon') {
+            drawPolygon(ctx, 6, o.r, o.fill, o.rot);
+        } else if (o.shapeType === 'star') {
+            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, o.fill, false);
+        }
+        ctx.restore();
+    }
+
+    for (const popup of scorePopups) {
+        ctx.save();
+        ctx.globalAlpha = 1 - popup.t;
+        ctx.font = `bold ${Math.max(16, W * 0.018)}px system-ui, ui-sans-serif`;
+        ctx.fillStyle = popup.color || '#fff';
+        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
+        ctx.lineWidth = 3;
+        ctx.strokeText(popup.val, popup.x, popup.y - 24 - popup.t * 32);
+        ctx.fillText(popup.val, popup.x, popup.y - 24 - popup.t * 32);
+        ctx.restore();
+    }
+
+    // Paddle: palette, scale, effect
+    let blinkNow = false;
+    const timeLeft = (nextPaletteSwapAt - now) / 1000;
+    if (palettePulse > 0) palettePulse -= 5;
+    let padColor;
+    let paletteScale = 1 + (palettePulse > 0 ? Math.max(0, Math.sin((palettePulse / 60) * Math.PI / 2)) * 0.25 : 0);
+    if (paddleBounce > 0) paletteScale += Math.sin(paddleBounce / 14 * Math.PI) * 0.16, paddleBounce--;
+
+    if (timeLeft <= 3 && timeLeft > 0) {
+        if (!draw.blinkActive) { draw.blinkActive = true; draw.blinkInterval = now; draw.blinkState = false; }
+        if (now - draw.blinkInterval > 200) { draw.blinkState = !draw.blinkState; draw.blinkInterval = now; }
+        blinkNow = draw.blinkState;
+    } else { draw.blinkActive = false; draw.blinkState = false; }
+    padColor = blinkNow ? palette[(colorIndex + 1) % palette.length].fill : palette[colorIndex].fill;
+
+    ctx.save();
+    ctx.translate(paddleX, getPaddleConfig().y + getPaddleConfig().h / 2);
+    ctx.scale(paletteScale, paletteScale);
+    // Bounce effect
+    let bounceScale = 1;
+    if (paddleBounceAnim > 0) {
+        bounceScale = 1 + Math.sin((18 - paddleBounceAnim) / 18 * Math.PI) * 0.22;
+        paddleBounceAnim--;
+    }
+    let paddleW = getPaddleWidth() * bounceScale;
+    let slimH = getPaddleConfig().h * bounceScale * 0.65;
+    ctx.fillStyle = padColor;
+    ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : padColor;
+    ctx.shadowBlur = 16 + (powerupTimers.shield > 0 ? 10 : 0);
+
+    // Always draw paddle as a rectangle
+    ctx.fillRect(-paddleW / 2, -slimH / 2, paddleW, slimH);
+
+    if (powerupTimers.shield > 0) {
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 3;
+        ctx.strokeRect(-paddleW / 2 - 3, -slimH / 2 - 2, paddleW + 6, slimH + 4);
+        ctx.restore();
+    }
+    ctx.lineWidth = 2;
+    ctx.globalAlpha = 1;
+    ctx.strokeStyle = "#fff6";
+    ctx.strokeRect(-paddleW / 2 + 1, -slimH / 2 + 1, paddleW - 2, slimH - 2);
+    ctx.restore();
+
+    if (pulse > 0) pulse -= 16;
+
+
+    if (flash > 0) { ctx.save(); ctx.fillStyle = `rgba(255,0,0,${flash / 480})`; ctx.fillRect(0, 0, W, H); ctx.restore(); flash -= 16; }
+
+    uiScore.textContent = score;
+    uiTimer.textContent = Math.max(0, Math.ceil((nextPaletteSwapAt - now) / 1000));
+    uiCurrDot.style.background = palette[colorIndex].fill;
+    uiLives.innerHTML = '';
+    for (let i = 0; i < MAX_LIVES; i++) {
+        const s = document.createElement('span');
+        s.className = 'heart-ui' + (i < lives ? '' : ' dim');
+        uiLives.appendChild(s);
+    }
+    if (document.getElementById('pwrShield')) document.getElementById('pwrShield').style.opacity = powerupTimers.shield > 0 ? 1 : 0.4;
+    if (document.getElementById('pwrClock')) document.getElementById('pwrClock').style.opacity = powerupTimers.clock > 0 ? 1 : 0.4;
+    if (document.getElementById('pwrMagnet')) document.getElementById('pwrMagnet').style.opacity = powerupTimers.magnet > 0 ? 1 : 0.4;
+
+    if (mouseInGame) {
+        ctx.save();
+        // Use palette color (with blinking logic if desired)
+        let currPaletteColor = palette[colorIndex].fill;
+        let blink = false;
+        const timeLeft = (nextPaletteSwapAt - performance.now()) / 1000;
+        if (timeLeft <= 3 && timeLeft > 0) {
+            blink = Math.floor(performance.now() / 200) % 2 === 0;
+        }
+        if (blink) {
+            currPaletteColor = palette[(colorIndex + 1) % palette.length].fill;
+        }
+        // Pointer arrow coordinates
+        ctx.translate(mouseX, mouseY);
+        const SCALE = 1.5;
+        ctx.scale(SCALE, SCALE);
+        ctx.beginPath();
+        ctx.moveTo(0, 0);      // tip
+        ctx.lineTo(0, 24);     // left
+        ctx.lineTo(7, 14);     // up right
+        ctx.lineTo(7, 14);     // up more left
+        ctx.lineTo(20, 12);    // right (horizontal part)
+        ctx.closePath();
+        ctx.fillStyle = currPaletteColor;
+        ctx.shadowColor = "#fff";
+        ctx.shadowBlur = blink ? 16 : 0;
+        ctx.globalAlpha = 0.92;
+        ctx.fill();
+        // Border
+        ctx.lineWidth = 1.8;
+        ctx.globalAlpha = 0.63;
+        ctx.strokeStyle = "#111";
+        ctx.stroke();
+        ctx.restore();
+    }
+}
+
+// ---- DRAW SHAPES ----
+//  icons for powerups
+
+function drawPowerupIcon(ctx, type, r) {
+    ctx.save();
+    ctx.font = `${r * 1.15}px Arial`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    let emoji = '❓';
+    if (type === 'shield') emoji = '🛡️';
+    else if (type === 'clock') emoji = '⏰';
+    else if (type === 'magnet') emoji = '🧲';
+    ctx.fillText(emoji, 0, 2); // (x=0,y=2) centers nicely in orb
+    ctx.restore();
+}
+
+
+function drawPolygon(ctx, sides, r, color, rotation = 0) {
+    ctx.save(); ctx.rotate(rotation); ctx.beginPath();
+    for (let i = 0; i < sides; i++) {
+        const angle = Math.PI / 2 + i * (2 * Math.PI / sides);
+        const x = Math.cos(angle) * r;
+        const y = Math.sin(angle) * r;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.95 + 0.05 * Math.sin(Date.now() / 400);
+    ctx.shadowBlur = 14 + 6 * Math.abs(Math.sin(Date.now() / 540));
+    ctx.fill(); ctx.restore();
+}
+
+function drawSemiCircle(ctx, r, color) {
+    ctx.beginPath();
+    ctx.arc(0, 0, r, Math.PI, 1 * Math.PI, false);
+    ctx.lineTo(r, 0);
+    ctx.arc(0, 0, r, 0, Math.PI, false);
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.fill();
+}
+
+function drawHeartPolygon(cx, cy, s, color) {
+    const w = s * 1.2, h = s * 1.2;
+    const px = cx - w / 2, py = cy - h / 2;
+    const points = [[0.5, 0.8], [0, 0.4], [0.2, 0], [0.5, 0.2], [0.8, 0], [1, 0.4]];
+    ctx.beginPath();
+    for (let i = 0; i < points.length; i++) {
+        const [nx, ny] = points[i];
+        const x = px + nx * w;
+        const y = py + ny * h;
+        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color || HEART_COLOR;
+    ctx.fill();
+}
+
+function drawStar(ctx, cx, cy, outerR, innerR, points, color, twinkle, beatScale) {
+    ctx.save();
+    if (beatScale) ctx.scale(beatScale, beatScale);
+    ctx.beginPath();
+    for (let i = 0; i < points * 2; i++) {
+        const angle = (Math.PI / points) * i;
+        const r = i % 2 === 0 ? outerR : innerR;
+        ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
+    }
+    ctx.closePath();
+    ctx.fillStyle = color;
+    ctx.shadowColor = color == '#FFFFFF' ? '#eeeeee' : color;
+    ctx.shadowBlur = twinkle ? 40 : 24;
+    ctx.globalAlpha = twinkle ? (0.88 + 0.12 * Math.sin(Date.now() / 134)) : 1;
+    ctx.fill();
+    ctx.restore();
 }
