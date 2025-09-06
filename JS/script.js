@@ -234,7 +234,15 @@ const uiNextName = document.getElementById('uiNextName');
 const overlayEl = document.getElementById('overlay');
 
 let paddleX = 0;
-function resetPaddle() { paddleX = (W - getPaddleConfig().w) / 2; }
+let paddleShrinkActive = false;
+let paddleShrinkTarget = 1;
+let paddleShrinkCurrent = 1;
+let paddleBounceAnim = 0;
+function getPaddleWidth() {
+    const baseW = getPaddleConfig().w;
+    return baseW * paddleShrinkCurrent;
+}
+function resetPaddle() { paddleX = W / 2; }
 resetPaddle();
 
 // ===== INPUT =====
@@ -244,15 +252,37 @@ canvas.addEventListener('pointermove', ev => {
     mouseX = mx;
     mouseY = ((ev.clientY - rect.top) / rect.height) * H;
 
-    paddleX = clamp(mx - getPaddleConfig().w / 2, 0, W - getPaddleConfig().w);
+    // Always set paddleX to mouse center, clamp to screen
+    paddleX = clamp(mx, getPaddleWidth() / 2, W - getPaddleWidth() / 2);
+// Ensure paddleX is always the center, even after resize
+window.addEventListener('resize', () => {
+    paddleX = clamp(paddleX, getPaddleWidth() / 2, W - getPaddleWidth() / 2);
+});
     mouseInGame = true;
 });
 canvas.addEventListener('pointerleave', () => {
     mouseInGame = false;
 });
+canvas.addEventListener('pointerdown', ev => {
+    if (ev.button === 0) {
+        paddleShrinkActive = true;
+        paddleShrinkTarget = 0.5;
+    }
+});
+canvas.addEventListener('pointerup', ev => {
+    if (ev.button === 0) {
+        paddleShrinkActive = false;
+        paddleShrinkTarget = 1;
+        // Trigger bounce animation if fully shrunk
+        if (paddleShrinkCurrent <= 0.51) {
+            paddleBounceAnim = 18; // frames for bounce
+        }
+    }
+});
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 function randRange(a, b) { return Math.random() * (b - a) + a; }
 function shuffle(arr) { const a = arr.slice(); for (let i = a.length - 1; i > 0; i--) { const j = (Math.random() * (i + 1)) | 0;[a[i], a[j]] = [a[j], a[i]] } return a; }
+function lerp(a, b, t) { return a + (b - a) * t; }
 
 // ==== SPAWN & ORBS ====
 const SHAPE_TYPES = [
@@ -448,8 +478,14 @@ let started = false;
 let fallingDelay = 2000;
 let startTime = 0;
 function update(dt, now) {
+    // Smoothly animate paddle shrink/grow
+    const lerpSpeed = 0.13 + 0.25 * dt;
+    paddleShrinkCurrent += (paddleShrinkTarget - paddleShrinkCurrent) * lerpSpeed;
+    if (Math.abs(paddleShrinkCurrent - paddleShrinkTarget) < 0.01) paddleShrinkCurrent = paddleShrinkTarget;
+
     const paddle = getPaddleConfig();
-    paddleX = clamp(paddleX, 0, W - paddle.w);
+    paddle.w = getPaddleWidth();
+    paddleX = clamp(paddleX, paddle.w / 2, W - paddle.w / 2);
 
     updatePowerups(dt);
 
@@ -488,7 +524,7 @@ function update(dt, now) {
         ) {
             // Only attract after orb has fallen 30% of the screen height
             if (o.y > H * 0.3) {
-                let paddleCx = paddleX + paddle.w / 2;
+                let paddleCx = paddleX;
                 let paddleCy = getPaddleConfig().y + getPaddleConfig().h / 2;
                 const dx = paddleCx - o.x;
                 const dy = paddleCy - o.y;
@@ -498,7 +534,6 @@ function update(dt, now) {
                     o.y += dy * 0.11 * 0.3;
                 }
             }
-            // No auto-collect here; let normal collision handle it
         }
 
         o.rot += o.rotSpeed * dt * 60;
@@ -516,7 +551,7 @@ function update(dt, now) {
         if (o.y - o.r > H) { orbs.splice(i, 1); continue; }
 
         const px = paddleX, py = paddle.y, pw = paddle.w, ph = paddle.h;
-        const cx = clamp(o.x, px, px + pw); const cy = clamp(o.y, py, py + ph);
+    const cx = clamp(o.x, px - pw / 2, px + pw / 2); const cy = clamp(o.y, py, py + ph);
         const dx = o.x - cx, dy = o.y - cy;
         if (dx * dx + dy * dy <= o.r * o.r) {
             let popupScore = 0;
@@ -706,17 +741,29 @@ function draw(now) {
     padColor = blinkNow ? palette[(colorIndex + 1) % palette.length].fill : palette[colorIndex].fill;
 
     ctx.save();
-    ctx.translate(paddleX + getPaddleConfig().w / 2, getPaddleConfig().y + getPaddleConfig().h / 2);
+    ctx.translate(paddleX, getPaddleConfig().y + getPaddleConfig().h / 2);
     ctx.scale(paletteScale, paletteScale);
-    let paddleW = getPaddleConfig().w;
-    let slimH = getPaddleConfig().h * 0.65;
+    // Bounce effect
+    let bounceScale = 1;
+    if (paddleBounceAnim > 0) {
+        bounceScale = 1 + Math.sin((18 - paddleBounceAnim) / 18 * Math.PI) * 0.22;
+        paddleBounceAnim--;
+    }
+    let paddleW = getPaddleWidth() * bounceScale;
+    let slimH = getPaddleConfig().h * bounceScale * 0.65;
     ctx.fillStyle = padColor;
     ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : padColor;
     ctx.shadowBlur = 16 + (powerupTimers.shield > 0 ? 10 : 0);
+
+    // Always draw paddle as a rectangle
     ctx.fillRect(-paddleW / 2, -slimH / 2, paddleW, slimH);
+
     if (powerupTimers.shield > 0) {
-        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 3; ctx.globalAlpha = 0.7;
+        ctx.save();
+        ctx.globalAlpha = 0.7;
+        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 3;
         ctx.strokeRect(-paddleW / 2 - 3, -slimH / 2 - 2, paddleW + 6, slimH + 4);
+        ctx.restore();
     }
     ctx.lineWidth = 2;
     ctx.globalAlpha = 1;

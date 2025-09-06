@@ -1,8 +1,0 @@
-1. Change emojis to Proper drawn pixels
-2. at the start the orb density will be less and start gorwing till a limit with time
-3. The orbs will be attracted by the nearest-displacement path towards the palette while using the magnet power-up
-4. The Bubbles will be almost transparent and the bubbles will not beat along with the special objects
-5. The size of all the special orbs will be the same.
-6. The Golden Star will be changed to radial-gradient rainbow color
-
-After making all the updates can you share me the full script.js, apart from that the margnet feature should not pull the orbs instantly, the pulling speed will be 70% slower
