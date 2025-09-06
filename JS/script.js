@@ -209,6 +209,7 @@ let orbs = [];
 let scorePopups = [];
 let lastSpawnAt = performance.now();
 let lastTime = performance.now();
+let animationFrameId = null;
 let elapsed = 0;
 let paused = false;
 let gameOver = false;
@@ -577,22 +578,38 @@ function restart() {
     score = 0; lives = MAX_LIVES; orbs = [];
     palette = PALETTE_BASE.slice(); colorIndex = Math.floor(Math.random() * palette.length);
     nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
-    lastSpawnAt = performance.now(); lastTime = performance.now(); elapsed = 0;
+    lastSpawnAt = performance.now(); lastTime = performance.now();
+    elapsed = 0; // Reset elapsed so speed starts normal
     paused = false; gameOver = false;
     overlayEl.classList.remove('show'); resetPaddle();
     prevSpawnXs = [null, null]; prevSpawnShapes = [];
     palettePulse = 0;
     started = false;
+    fallingDelay = 2000; // Reset fallingDelay to default
     powerupTimers = { shield: 0, clock: 0, magnet: 0 };
     canSpawnPowerup = true;
     startTime = performance.now();
+    // Hide mouse pointer on restart
+    const gameCanvas = document.getElementById('game');
+    if (gameCanvas) gameCanvas.style.cursor = 'none';
     setTimeout(() => { started = true; }, fallingDelay);
-    requestAnimationFrame(loop);
+    if (animationFrameId) {
+        cancelAnimationFrame(animationFrameId);
+    }
+    animationFrameId = requestAnimationFrame(loop);
 }
 
 function togglePause() {
     if (gameOver) return;
     paused = !paused;
+    window.paused = paused;
+    // Toggle Font Awesome play/pause icons
+    if (typeof window.syncPlayPauseIcon === 'function') {
+        window.syncPlayPauseIcon();
+    }
+    // Show mouse pointer when paused
+    const gameCanvas = document.getElementById('game');
+    if (gameCanvas) gameCanvas.style.cursor = paused ? 'default' : 'none';
     if (!paused) { lastTime = performance.now(); requestAnimationFrame(loop); }
 }
 
@@ -847,7 +864,7 @@ function loop(now) {
     resizeCanvas();
     update(dt, now);
     draw(now);
-    requestAnimationFrame(loop);
+    animationFrameId = requestAnimationFrame(loop);
 }
 
 function init() {

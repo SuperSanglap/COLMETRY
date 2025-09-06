@@ -1,3 +1,72 @@
+/* Font Awesome icon sizing for control buttons */
+.icon-btn i.fa-solid {
+    font-size: 1.6em;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon-btn span {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Game screen horizontal button row */
+.game-btn-row {
+    position: fixed;
+    bottom: 14px;
+    right: 14px;
+    z-index: 9;
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    justify-content: center;
+}
+.game-btn-row .icon-btn {
+    background: #182232;
+    border-radius: 50%;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px #0006;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.game-btn-row .icon-btn:hover {
+    background: #22304a;
+    box-shadow: 0 4px 18px #3fd0ff88;
+}
+/* Overlay horizontal button row */
+.overlay-btn-row {
+    display: flex;
+    flex-direction: row;
+    gap: 18px;
+    justify-content: center;
+    margin-top: 18px;
+}
+.overlay-btn-row .icon-btn {
+    background: #182232;
+    border-radius: 50%;
+    width: 54px;
+    height: 54px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 12px #0006;
+    border: none;
+    cursor: pointer;
+    transition: background 0.2s, box-shadow 0.2s;
+}
+.overlay-btn-row .icon-btn:hover {
+    background: #22304a;
+    box-shadow: 0 4px 18px #3fd0ff88;
+}
 .start-overlay {
     cursor: pointer;
     pointer-events: auto;
@@ -210,13 +279,25 @@ canvas {
     border: 0;
     background: rgba(255, 255, 255, 0.04);
     color: var(--ink);
-    padding: 8px 10px;
+    padding: 8px;
     border-radius: 10px;
     cursor: pointer;
     font-weight: 700;
     margin-left: 8px;
     margin-bottom: 2px;
     font-size: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* Font Awesome icon sizing for control buttons */
+.icon-btn i.fa-solid {
+    font-size: 1.7em;
+    width: 1em;
+    height: 1em;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .overlay {

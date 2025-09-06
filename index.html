@@ -6,6 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Coloroid</title>
     <link rel="stylesheet" href="CSS/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
@@ -34,10 +36,17 @@
             </div>
         </div>
 
-        <div style="position:fixed;bottom:14px;right:14px;z-index:9">
-            <button class="control-btn" id="btnMusic">Music</button>
-            <button class="control-btn" id="btnPause">Pause</button>
-            <button class="control-btn" id="btnRestart">Restart</button>
+        <div class="game-btn-row">
+            <button class="control-btn icon-btn" id="btnMusic" title="Music">
+                <i class="fa-solid fa-music"></i>
+            </button>
+            <button class="control-btn icon-btn" id="btnPause" title="Pause/Play">
+                <i id="faPause" class="fa-solid fa-pause"></i>
+                <i id="faPlay" class="fa-solid fa-play" style="display:none;"></i>
+            </button>
+            <button class="control-btn icon-btn" id="btnRetry" title="Retry">
+                <i class="fa-solid fa-rotate-right"></i>
+            </button>
         </div>
 
         <audio id="bgm" loop></audio>
@@ -45,7 +54,14 @@
         <div class="overlay" id="overlay">
             <div class="card">
                 <div id="overlayText"></div>
-                <button class="control-btn" id="btnOverlayRestart">Restart</button>
+                <div class="overlay-btn-row">
+                    <button class="control-btn icon-btn" id="btnOverlayRestart" title="Restart">
+                        <i class="fa-solid fa-rotate-right fa-2x"></i>
+                    </button>
+                    <button class="control-btn icon-btn" id="btnOverlayHome" title="Home">
+                        <i class="fa-solid fa-house fa-xl"></i>
+                    </button>
+                </div>
             </div>
         </div>
         <!-- Start Screen Overlay -->
