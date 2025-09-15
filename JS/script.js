@@ -72,12 +72,7 @@ window.addEventListener('DOMContentLoaded', function() {
     const tutorial = document.getElementById('tutorialOverlay');
     const mobile = document.getElementById('mobileOverlay');
     const gameContainer = document.querySelector('.game-container');
-    if (isMobile()) {
-        if (tutorial) tutorial.style.display = 'none';
-        if (mobile) mobile.style.display = 'flex';
-        if (gameContainer) gameContainer.style.pointerEvents = 'none';
-        return;
-    }
+
     // Show tutorial overlay
     if (tutorial) tutorial.style.display = 'flex';
     if (gameContainer) gameContainer.style.pointerEvents = 'none';
@@ -222,6 +217,9 @@ let palettePulse = 0;
 let paddleBounce = 0;
 let powerupTimers = { shield: 0, clock: 0, magnet: 0 };
 let lastPowerupSpawn = -POWERUP_MIN_SPAWN_DELAY * 2000; // allow spawn at start
+// Startup / engine guard
+window._coloroidGameBlocked = window._coloroidGameBlocked === undefined ? true : window._coloroidGameBlocked;
+let engineRunning = false;
 
 const uiScore = document.getElementById('uiScore');
 const uiLives = document.getElementById('uiLives');
@@ -954,15 +952,19 @@ function init() {
     const gameCanvas = document.getElementById('game');
     if (gameCanvas) gameCanvas.style.cursor = 'none';
     setTimeout(() => { started = true; }, fallingDelay);
-    requestAnimationFrame(loop);
+    // prevent multiple loops
+    if (engineRunning && animationFrameId) cancelAnimationFrame(animationFrameId);
+    engineRunning = true;
+    animationFrameId = requestAnimationFrame(loop);
 }
 
 // Only start game after tutorial click
 window.startColoroidGame = function() {
+    // Unblock and init safely even if called multiple times
     if (window._coloroidGameBlocked) {
         window._coloroidGameBlocked = false;
-        init();
     }
+    if (!engineRunning) init();
 };
 
 // If not blocked, start immediately (for reloads, dev, etc)

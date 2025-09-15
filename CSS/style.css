@@ -371,6 +371,83 @@ body.powerup-active #powerupBar span {
     animation: beat-pop 0.7s infinite;
 }
 
+/* Mana bar styling (overrides inline styles from JS where needed) */
+#manaBar {
+    position: absolute; /* JS may set exact coords */
+    left: 18px;
+    top: 54px;
+    width: 140px;
+    height: 18px;
+    background: linear-gradient(180deg, rgba(12,18,24,0.6), rgba(6,10,14,0.6));
+    border: 2px solid rgba(0,255,208,0.12);
+    border-radius: 8px;
+    padding: 2px;
+    box-shadow: 0 4px 18px rgba(0,255,208,0.06), inset 0 0 10px rgba(0,255,208,0.03);
+    z-index: 20;
+    transition: opacity 0.2s, transform 0.15s;
+    pointer-events: auto;
+}
+
+#manaBarFill {
+    height: 100%;
+    width: 100%; /* controlled by JS inline style */
+    display: block;
+    background: linear-gradient(90deg,#00ffd0 0%, #00bfff 70%, #7a43ff 100%);
+    border-radius: 6px;
+    box-shadow: 0 0 18px rgba(0,255,208,0.14), inset 0 0 12px rgba(255,255,255,0.03);
+    transition: width 0.22s cubic-bezier(.2,.9,.2,1), filter 0.18s, transform 0.18s;
+}
+
+/* low mana subtle dim (JS can toggle body.low-mana to activate) */
+body.low-mana #manaBarFill { filter: grayscale(0.6) brightness(0.75); }
+body.full-mana #manaBarFill { box-shadow: 0 0 30px rgba(122,67,255,0.25), inset 0 0 18px rgba(255,255,255,0.06); }
+
+/* Powerup tile polish */
+#powerupBar {
+    display: inline-flex;
+    gap: 8px;
+    align-items: center;
+}
+
+#powerupBar span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 34px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.03);
+    color: var(--ink);
+    font-size: 18px;
+    transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+    opacity: 0.55;
+    border: 1px solid rgba(255,255,255,0.04);
+}
+
+#powerupBar span:hover { transform: translateY(-2px) scale(1.03); opacity: 0.9; }
+
+/* Active powerup (JS already sets inline opacity to 1) */
+#powerupBar span[style*="opacity: 1"] {
+    opacity: 1 !important;
+    transform: scale(1.06);
+    box-shadow: 0 6px 24px rgba(255, 215, 90, 0.12), inset 0 0 8px rgba(255,255,255,0.02);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.00));
+}
+
+/* make emoji icons crisper and centered */
+#powerupBar span { line-height: 1; }
+
+/* Control button tweaks for better hit area and hover glow */
+.control-btn {
+    padding: 10px 12px;
+    border-radius: 12px;
+    background: rgba(255,255,255,0.03);
+    transition: background 0.18s, box-shadow 0.18s, transform 0.12s;
+}
+.control-btn:focus { outline: 2px solid rgba(63,208,255,0.16); outline-offset: 2px; }
+.control-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(63,208,255,0.06); }
+
+
 #game {
     cursor: none;
 }
