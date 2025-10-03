@@ -44,7 +44,7 @@ window.addEventListener('DOMContentLoaded', function() {
     }
     // Render multi-colored title
     function renderColoroidTitle() {
-        const title = 'COLOROID';
+        const title = 'COLMETRY';
         const colors = [
             '#FF385F', '#FF7100', '#FFE925', '#73FA2E', '#11B5EA', '#9C1DF8', '#fff', '#00FFD0', '#FF4B4B', '#FFA33C', '#FFD93D', '#4ADE80', '#60A5FA', '#A78BFA'
         ];
