@@ -92,37 +92,38 @@
     width: 100%;
     max-width: 600px;
 }
-.game-title {
-    font-size: 3.2em;
-    font-weight: 900;
-    letter-spacing: 0.04em;
-    margin-bottom: 0.2em;
-    margin-top: 0.2em;
-    text-align: center;
-    display: flex;
-    justify-content: center;
-    gap: 0.05em;
+.hud-left {
+    position: absolute;
+    left: 14px;
+    top: 14px;
+    display: grid;
+    grid-template-columns: 1fr; /* single column so all items align to same left margin */
+    grid-auto-rows: auto;
+    gap: 14px; /* uniform vertical spacing */
+    pointer-events: auto;
+    filter: drop-shadow(0 6px 18px rgba(0,0,0,0.35));
 }
-.game-title span {
-    font-family: 'Segoe UI Black', 'Arial Black', Impact, fantasy, sans-serif;
-    font-size: 1em;
-    font-weight: 900;
-    text-shadow: 0 4px 32px #0008, 0 1px 0 #fff, 0 0 8px #0ff8;
-    transition: color 0.2s;
+
+#score-chip {
+    grid-column: 1 / 2;
 }
-.start-cta {
-    margin: 1.5em 0 0.5em 0;
-    font-size: 1.3em;
-    font-weight: bold;
-    color: #fff;
-    text-shadow: 0 2px 12px #3fd0ff88;
-    letter-spacing: 0.03em;
-    cursor: pointer;
-    transition: color 0.2s;
+
+#lives-chip {
+    grid-column: 1 / 2;
 }
-.start-cta:hover {
-    color: #3fd0ff;
+
+#powerupBar {
+    grid-column: 1 / 2;
+    margin-left: 28px;
 }
+
+#manaBar {
+    grid-column: 1 / 2;
+    width: 250px; /* compact width but full alignment */
+    min-width: 160px;
+    margin-top: 88px; /* ensure at least 15px gap under powerups */
+}
+
 .start-content {
     position: relative;
     z-index: 1;
@@ -232,20 +233,21 @@ canvas {
 .chip {
     display: inline-flex;
     align-items: center;
-    gap: 8px;
-    padding: 8px 12px;
+    gap: 10px;
+    padding: 10px 14px;
     border-radius: 12px;
-    background: rgba(10, 16, 24, 0.6);
-    border: 1px solid rgba(255, 255, 255, 0.04);
-    backdrop-filter: blur(6px);
-    font-weight: 600;
+    background: linear-gradient(180deg, rgba(10, 16, 24, 0.85), rgba(6,10,14,0.85));
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(8px);
+    font-weight: 700;
+    z-index: 25; /* ensure chips float above mana */
 }
 
 .dot {
-    width: 18px;
-    height: 18px;
+    width: 24px; /* ~1.3x */
+    height: 24px;
     border-radius: 50%;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.6);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.6), inset 0 1px rgba(255,255,255,0.06);
     display: inline-block;
 }
 
@@ -261,13 +263,14 @@ canvas {
 }
 
 .heart-ui {
-    width: 18px;
-    height: 18px;
-    background: var(--heart);
+    width: 24px; /* ~1.3x */
+    height: 24px;
+    background: linear-gradient(45deg, var(--heart), #ff8b9a);
     clip-path: polygon(50% 80%, 0 40%, 20% 0, 50% 20%, 80% 0, 100% 40%);
     opacity: 1;
     display: inline-block;
-    margin-right: 2px;
+    margin-right: 4px;
+    box-shadow: 0 3px 6px rgba(0,0,0,0.35);
 }
 
 .heart-ui.dim {
@@ -279,13 +282,13 @@ canvas {
     border: 0;
     background: rgba(255, 255, 255, 0.04);
     color: var(--ink);
-    padding: 8px;
-    border-radius: 10px;
+    padding: 10px;
+    border-radius: 12px;
     cursor: pointer;
     font-weight: 700;
     margin-left: 8px;
     margin-bottom: 2px;
-    font-size: 16px;
+    font-size: 18px; /* ~1.3x */
     display: flex;
     align-items: center;
     justify-content: center;
@@ -325,20 +328,21 @@ canvas {
     font-size: 18px;
 }
 
-#powerupBar {
-    min-width: 120px;
-    text-align: center;
-}
-
 #powerupBar span {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 50px; /* ~1.3x */
+    height: 44px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.03);
+    color: var(--ink);
     font-size: 22px;
-    padding: 0 7px;
-    transition: opacity 0.2s;
-    opacity: 0.4;
-}
-
-body.powerup-active #powerupBar span {
-    filter: drop-shadow(0 0 6px #ffe74c);
+    transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+    opacity: 0.65;
+    border: 1px solid rgba(255,255,255,0.04);
+    line-height: 1;
+    margin: 0 4px;
 }
 
 #powerupBar span[style*="opacity: 1"] {
