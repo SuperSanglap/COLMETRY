@@ -183,24 +183,25 @@
     </script>
 
     <script>
-    // Extra protection: while the tutorial overlay is visible, block any clicks that are not
-    // the Play button or the footer credit. This uses a capturing listener so it runs before
-    // other handlers (including any engine-attached click-to-play). It won't interfere once
-    // the overlay is hidden or removed.
+    // Extra protection: while the tutorial overlay is visible, block input events that are not
+    // the Play button or the footer credit. Register capture-phase handlers before the engine
+    // script loads so we can block engine-attached listeners on pointer events as well.
     (function(){
         var overlay = document.getElementById('tutorialOverlay');
         if (!overlay) return;
-        document.addEventListener('click', function(e){
+        function shouldAllow(e){ return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link')); }
+        function blocker(e){
             try{
-                var disp = window.getComputedStyle(overlay).display;
-                if (disp === 'none' || disp === '') return; // overlay not visible
-                // allow Play button and footer credit clicks to proceed
-                if (e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link'))) return;
-                // otherwise block the event from reaching other listeners (engine)
-                e.stopImmediatePropagation();
-                e.preventDefault();
-            }catch(err){ /* fail safely */ }
-        }, true); // use capture phase
+                var currentOverlay = document.getElementById('tutorialOverlay');
+                if (!currentOverlay) return; // Don't block if overlay is removed
+                var disp = window.getComputedStyle(currentOverlay).display;
+                if (disp === 'none' || disp === '') return; // Don't block if overlay is hidden
+                if (shouldAllow(e)) return;
+                e.stopImmediatePropagation(); e.preventDefault();
+            }catch(err){}
+        }
+        // Block common input event types in capture phase
+        ['click','pointerdown','mousedown','touchstart'].forEach(function(ev){ document.addEventListener(ev, blocker, true); });
     })();
     </script>
 
@@ -247,21 +248,18 @@
     (function(){
         try{
             var old = document.getElementById('tutorialOverlay');
-            if(old && old.parentNode){
+            if (old && old.parentNode) {
                 var clone = old.cloneNode(true);
-                // preserve inline styles
                 clone.style.display = old.style.display;
                 old.parentNode.replaceChild(clone, old);
-                // rewire start button on cloned overlay
                 var startBtn = clone.querySelector('#startBtn');
-                if(startBtn){
+                if (startBtn) {
                     startBtn.addEventListener('click', function(e){
                         e.stopPropagation();
-                        // hide and remove the cloned overlay so it can't block input
+                        // remove clone so it can't block input
                         clone.style.display = 'none';
                         try { clone.style.pointerEvents = 'none'; } catch(e){}
                         if (clone.parentNode) clone.parentNode.removeChild(clone);
-                        // unlock home so capture blockers allow game input
                         try{ window._homeLocked = false; }catch(e){}
                         var gameContainer = document.querySelector('.game-container');
                         if (gameContainer) gameContainer.style.pointerEvents = '';
@@ -270,13 +268,29 @@
                         } else if (document.documentElement.webkitRequestFullscreen) {
                             document.documentElement.webkitRequestFullscreen();
                         }
-                        // hide footer credit during play
                         var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
-                        // show control buttons now that we're leaving the start screen
                         showControls();
-                        // restore UI buttons so pause/retry are active
                         if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
-        }catch(err){ console.warn('overlay clone failed', err); }
+                        try{
+                            if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
+                            else if(typeof window.startGame === 'function') window.startGame();
+                        }catch(err){ /* start failed (ignored) */ }
+                        try{
+                            var bgmEl2 = document.getElementById('bgm'); var iconMusic2 = document.getElementById('iconMusic');
+                            if (bgmEl2 && bgmEl2.src) {
+                                bgmEl2.play().then(function(){
+                                    window._bgmUserOn = true;
+                                    if (iconMusic2) { iconMusic2.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic2.classList.add('fa-volume-high'); }
+                                }).catch(function(err){
+                                    window._bgmUserOn = false;
+                                    if (iconMusic2) { iconMusic2.classList.remove('fa-volume-high'); iconMusic2.classList.add('fa-volume-xmark'); }
+                                });
+                            }
+                        }catch(e){}
+                    });
+                }
+            }
+        }catch(err){ /* overlay clone failed (ignored) */ }
     })();
     </script>
     <script src="JS/main.js"></script>
@@ -332,16 +346,9 @@
                     var gameContainer = document.querySelector('.game-container');
                     if (gameContainer) gameContainer.style.pointerEvents = '';
                 }catch(e){}
-                // Hide footer credit while game is active
-                try {
-                    var foot = document.querySelector('.footer-credit');
-                    if (foot) {
-                        // Only hide the footer if the game has actually started. If we're on the home screen
-                        // keep the credit visible.
-                        if (window.started) foot.style.display = 'none'; else foot.style.display = 'flex';
-                    }
-                } catch(e){}
-            }catch(e){ console.warn('restore UI buttons failed', e); }
+                // hide footer credit during play
+                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+            }catch(e){ /* restore UI buttons failed (ignored) */ }
         };
 
         // Call once in case game already started
@@ -355,14 +362,17 @@
                 var mo = new MutationObserver(function(m){
                     m.forEach(function(rec){
                         if (rec.attributeName === 'class' || rec.attributeName === 'style'){
-                            var disp = window.getComputedStyle(overlayMain).display;
-                            if (disp === 'flex' || disp === 'block') {
-                                foot.style.display = '';
-                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                            var tut = document.getElementById('tutorialOverlay');
+                            var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
+                            var mainOverlay = document.getElementById('overlay');
+                            var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
+
+                            if (tutVis || mainVis) { 
+                                foot.style.display = 'flex'; // Show on home or game over screen
                             } else {
-                                // overlay hidden -> ensure icons reflect running state
-                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                                foot.style.display = 'none'; // Hide during gameplay
                             }
+                            try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
                         }
                     });
                 });
@@ -379,22 +389,7 @@
         }catch(e){}
     })();
 
-    // Block pointer gestures while start overlay is visible (capture phase)
-    (function(){
-        var overlay = document.getElementById('tutorialOverlay');
-        if (!overlay) return;
-        function blocker(e){
-            try{
-                var disp = window.getComputedStyle(overlay).display;
-                if (disp === 'none' || disp === '') return;
-                if (e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link'))) return;
-                e.stopImmediatePropagation(); e.preventDefault();
-            }catch(err){}
-        }
-        document.addEventListener('pointerdown', blocker, true);
-        document.addEventListener('mousedown', blocker, true);
-        document.addEventListener('touchstart', blocker, true);
-    })();
+    <!-- pointer blockers moved earlier to ensure they run before engine handlers -->
 
     // Robust restart wrapper: wrap existing restart or wait and wrap; ensure syncPlayPauseIcon runs after restart
     (function(){
@@ -420,34 +415,7 @@
         }
     })();
     </script>
-    <script>
-    // Debug helper: periodically spawn a visible powerup orb so the user can see powerups falling.
-    // This is non-invasive: it uses the existing global spawnOrb function and only runs during play.
-    (function(){
-        try{
-            // Toggle this to false to disable the debug spawns
-            window._debugSpawnPowerups = true;
-            function spawnDebugPowerup(){
-                if (!window._debugSpawnPowerups) return;
-                if (typeof spawnOrb !== 'function') return;
-                // only spawn while game has started and not game over
-                if (!window.started || window.gameOver) return;
-                // don't spam: keep at most 1 debug powerup on screen
-                try{
-                    var existing = (window.orbs || []).filter(o => o.isPowerup).length;
-                    if (existing > 1) return;
-                }catch(e){}
-                var types = ['shield','clock','magnet'];
-                var t = types[Math.floor(Math.random() * types.length)];
-                var W = window.innerWidth || 800;
-                var x = Math.max(40, Math.min(W - 40, Math.floor(Math.random() * (W - 80)) + 40));
-                try{ spawnOrb({ isPowerup: true, powerupType: t, x: x }); }catch(e){}
-            }
-            // Spawn every ~8 seconds while playing
-            setInterval(spawnDebugPowerup, 8000);
-        }catch(e){ console.warn('debug powerup injector failed', e); }
-    })();
-    </script>
+    <!-- debug powerup injector removed -->
     <script>
     // Monkey-patch restart: ensure syncPlayPauseIcon is called whenever restart runs
     (function(){
@@ -473,7 +441,7 @@
                     }
                 }, 120);
             }
-        }catch(e){ console.warn('restart wrapper failed', e); }
+    }catch(e){ /* restart wrapper failed (ignored) */ }
     })();
     </script>
 </body>
