@@ -156,6 +156,24 @@
 .start-cta:hover {
     color: #3fd0ff;
 }
+/* Credit line on start overlay */
+.credit {
+    margin-top: 12px;
+    font-size: 0.9em;
+    color: rgba(255,255,255,0.75);
+    text-align: center;
+}
+.credit a {
+    color: #fff;
+    text-decoration: underline;
+    font-weight: 700;
+}
+
+/* Footer credit styling */
+.footer-credit .credit {
+    backdrop-filter: blur(6px);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.45);
+}
 @keyframes start-bg-anim {
     0% { background-position: 60% 40%; }
     100% { background-position: 40% 60%; }

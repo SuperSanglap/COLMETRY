@@ -89,6 +89,32 @@
                 <p>This game is designed for desktop/laptop computers.<br>Please open on a PC for the best experience.</p>
             </div>
         </div>
+
+        <!-- Footer credit -->
+        <div class="footer-credit" style="position:fixed;left:0;right:0;bottom:8px;z-index:1010;pointer-events:auto;display:flex;justify-content:center;">
+            <div class="credit small" style="padding:6px 10px;background:rgba(8,12,18,0.6);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
+                Made with <span style="color:#ff5b6e;margin:0 6px;">♥</span> by <a id="credit-link" href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">Sanglap</a>
+            </div>
+        </div>
+
+        <script>
+        // Prevent clicks on the credit link from starting the game (stop propagation)
+        (function(){
+            var link = document.getElementById('credit-link');
+            if(link){
+                link.addEventListener('click', function(e){
+                    e.stopPropagation();
+                    // allow normal link behavior (opening in new tab)
+                });
+            }
+            var creditBox = document.querySelector('.footer-credit');
+            if(creditBox){
+                creditBox.addEventListener('click', function(e){
+                    e.stopPropagation();
+                });
+            }
+        })();
+        </script>
     </div>
 
     <script src="JS/script.js"></script>
