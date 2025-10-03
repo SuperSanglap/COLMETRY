@@ -39,20 +39,61 @@ document.getElementById('btnOverlayRestart').addEventListener('click', () => {
 });
 
 const bgm = document.getElementById('bgm');
-let musicOn = false;
+// Use a single global flag for music preference
+window._bgmUserOn = !!window._bgmUserOn;
 document.getElementById('btnMusic').addEventListener('click', () => {
-    if (!bgm.src) {
+    if (!bgm || !bgm.src) {
         alert('No music source set. Add a file URL to the <audio> element src attribute in the code to enable music.');
         return;
     }
     const iconMusic = document.getElementById('iconMusic');
-    if (!musicOn) {
-        bgm.play().catch(() => { });
-        musicOn = true;
-        if (iconMusic) iconMusic.textContent = '🔊';
+    if (!window._bgmUserOn) {
+        bgm.play().then(function(){
+            window._bgmUserOn = true;
+            if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
+        }).catch(function(err){
+            console.warn('BGM play blocked or failed', err);
+            window._bgmUserOn = false;
+            if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-xmark'); }
+        });
     } else {
-        bgm.pause();
-        musicOn = false;
-        if (iconMusic) iconMusic.textContent = '🔈';
+        try { bgm.pause(); } catch(e){}
+        window._bgmUserOn = false;
+        if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
     }
 });
+
+// If the engine exposes togglePause later, wrap it so BGM respects pause state
+function wrapTogglePause(){
+    try{
+        if (typeof window.togglePause === 'function' && !window._togglePauseWrapped){
+            var orig = window.togglePause;
+            window.togglePause = function(){
+                var res = orig.apply(this, arguments);
+                // If music is user-enabled, pause/resume with the game
+                try{
+                    if (window._bgmUserOn && bgm) {
+                        if (window.paused) {
+                            try { bgm.pause(); } catch(e){}
+                        } else {
+                            bgm.play().then(function(){
+                                // no-op, play succeeded
+                            }).catch(function(err){
+                                console.warn('BGM play blocked or failed in togglePause wrapper', err);
+                                window._bgmUserOn = false;
+                                var iconMusic = document.getElementById('iconMusic'); if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
+                            });
+                        }
+                    }
+                }catch(e){}
+                return res;
+            };
+            window._togglePauseWrapped = true;
+            return true;
+        }
+    }catch(e){}
+    return false;
+}
+if (!wrapTogglePause()){
+    var tpCheck = setInterval(function(){ if (wrapTogglePause()){ clearInterval(tpCheck); } }, 120);
+}

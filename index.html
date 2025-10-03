@@ -38,7 +38,8 @@
 
         <div class="game-btn-row">
             <button class="control-btn icon-btn" id="btnMusic" title="Music">
-                <i id="iconMusic" class="fa-solid fa-music"></i>
+                <!-- Use Font Awesome volume icon; default to muted (xmark) until user enables -->
+                <i id="iconMusic" class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
             </button>
             <button class="control-btn icon-btn" id="btnPause" title="Pause/Play">
                 <i id="faPause" class="fa-solid fa-pause"></i>
@@ -49,7 +50,7 @@
             </button>
         </div>
 
-        <audio id="bgm" loop></audio>
+    <audio id="bgm" loop src="SFX/bgm.mp3"></audio>
 
         <div class="overlay" id="overlay">
             <div class="card">
@@ -106,6 +107,13 @@
     <script>
     // Make the start overlay click-safe: only the Play Now button starts the game.
     (function(){
+        // Centralized control show/hide helpers (exposed globally)
+        window.showControls = function(){
+            try{ var gb = document.querySelector('.game-btn-row'); if (gb){ gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; } }catch(e){}
+        };
+        window.hideControls = function(){
+            try{ var gb = document.querySelector('.game-btn-row'); if (gb){ gb.style.display = 'none'; gb.style.pointerEvents = 'none'; } }catch(e){}
+        };
         var overlay = document.getElementById('tutorialOverlay');
         var startBtn = document.getElementById('startBtn');
         // Only prevent clicks that target the overlay background itself.
@@ -128,6 +136,8 @@
                     overlay.style.display = 'none';
                     try { overlay.style.pointerEvents = 'none'; } catch(e){}
                     if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                    // unlock home so capture blockers allow game input
+                    try{ window._homeLocked = false; }catch(e){}
                 }
                 // re-enable game container pointer events so canvas receives input
                 var gameContainer = document.querySelector('.game-container');
@@ -141,7 +151,7 @@
                 // hide footer credit during play
                 var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
                 // show control buttons now that we're leaving the start screen
-                var gb = document.querySelector('.game-btn-row'); if (gb) gb.style.display = 'flex';
+                showControls();
                 // restore UI buttons (make sure pause/retry work and styles reset)
                 if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
                 // call game starter if available
@@ -151,8 +161,46 @@
                 }catch(err){
                     console.warn('start button pressed, but start function not found', err);
                 }
+                // Start BGM (allowed because Play button is a user gesture). Set user preference to on.
+                try{
+                    var bgmEl = document.getElementById('bgm');
+                    var iconMusic = document.getElementById('iconMusic');
+                    if (bgmEl && bgmEl.src) {
+                        bgmEl.play().then(function(){
+                            window._bgmUserOn = true;
+                            if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
+                        }).catch(function(err){
+                            // Playback blocked by browser/autoplay policy or other issue
+                            console.warn('BGM play blocked or failed', err);
+                            window._bgmUserOn = false;
+                            if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-xmark'); }
+                        });
+                    }
+                }catch(e){}
             });
         }
+    })();
+    </script>
+
+    <script>
+    // Extra protection: while the tutorial overlay is visible, block any clicks that are not
+    // the Play button or the footer credit. This uses a capturing listener so it runs before
+    // other handlers (including any engine-attached click-to-play). It won't interfere once
+    // the overlay is hidden or removed.
+    (function(){
+        var overlay = document.getElementById('tutorialOverlay');
+        if (!overlay) return;
+        document.addEventListener('click', function(e){
+            try{
+                var disp = window.getComputedStyle(overlay).display;
+                if (disp === 'none' || disp === '') return; // overlay not visible
+                // allow Play button and footer credit clicks to proceed
+                if (e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link'))) return;
+                // otherwise block the event from reaching other listeners (engine)
+                e.stopImmediatePropagation();
+                e.preventDefault();
+            }catch(err){ /* fail safely */ }
+        }, true); // use capture phase
     })();
     </script>
 
@@ -213,6 +261,8 @@
                         clone.style.display = 'none';
                         try { clone.style.pointerEvents = 'none'; } catch(e){}
                         if (clone.parentNode) clone.parentNode.removeChild(clone);
+                        // unlock home so capture blockers allow game input
+                        try{ window._homeLocked = false; }catch(e){}
                         var gameContainer = document.querySelector('.game-container');
                         if (gameContainer) gameContainer.style.pointerEvents = '';
                         if (document.documentElement.requestFullscreen) {
@@ -223,16 +273,9 @@
                         // hide footer credit during play
                         var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
                         // show control buttons now that we're leaving the start screen
-                        var gb2 = document.querySelector('.game-btn-row'); if (gb2) gb2.style.display = 'flex';
+                        showControls();
                         // restore UI buttons so pause/retry are active
                         if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
-                        try{
-                            if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
-                            else if(typeof window.startGame === 'function') window.startGame();
-                        }catch(err){ console.warn('start failed', err); }
-                    });
-                }
-            }
         }catch(err){ console.warn('overlay clone failed', err); }
     })();
     </script>
@@ -269,10 +312,10 @@
                     }
                     if (bgmEl.paused) {
                         bgmEl.play().catch(()=>{});
-                        if (iconMusic) iconMusic.textContent = '🔊';
+                        if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
                     } else {
                         bgmEl.pause();
-                        if (iconMusic) iconMusic.textContent = '🔈';
+                        if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
                     }
                 });
                 // Reset visual state: ensure play/pause icon synced
@@ -290,7 +333,14 @@
                     if (gameContainer) gameContainer.style.pointerEvents = '';
                 }catch(e){}
                 // Hide footer credit while game is active
-                try { var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none'; } catch(e){}
+                try {
+                    var foot = document.querySelector('.footer-credit');
+                    if (foot) {
+                        // Only hide the footer if the game has actually started. If we're on the home screen
+                        // keep the credit visible.
+                        if (window.started) foot.style.display = 'none'; else foot.style.display = 'flex';
+                    }
+                } catch(e){}
             }catch(e){ console.warn('restore UI buttons failed', e); }
         };
 
@@ -306,7 +356,13 @@
                     m.forEach(function(rec){
                         if (rec.attributeName === 'class' || rec.attributeName === 'style'){
                             var disp = window.getComputedStyle(overlayMain).display;
-                            if (disp === 'flex' || disp === 'block') { foot.style.display = ''; }
+                            if (disp === 'flex' || disp === 'block') {
+                                foot.style.display = '';
+                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                            } else {
+                                // overlay hidden -> ensure icons reflect running state
+                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                            }
                         }
                     });
                 });
@@ -319,9 +375,25 @@
     // Hide control buttons on initial load (home screen). They'll be shown when Play is clicked.
     (function(){
         try{
-            var gb = document.querySelector('.game-btn-row');
-            if (gb) gb.style.display = 'none';
+            hideControls();
         }catch(e){}
+    })();
+
+    // Block pointer gestures while start overlay is visible (capture phase)
+    (function(){
+        var overlay = document.getElementById('tutorialOverlay');
+        if (!overlay) return;
+        function blocker(e){
+            try{
+                var disp = window.getComputedStyle(overlay).display;
+                if (disp === 'none' || disp === '') return;
+                if (e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link'))) return;
+                e.stopImmediatePropagation(); e.preventDefault();
+            }catch(err){}
+        }
+        document.addEventListener('pointerdown', blocker, true);
+        document.addEventListener('mousedown', blocker, true);
+        document.addEventListener('touchstart', blocker, true);
     })();
 
     // Robust restart wrapper: wrap existing restart or wait and wrap; ensure syncPlayPauseIcon runs after restart
@@ -333,6 +405,7 @@
                     window.restart = function(){
                         var res = orig.apply(this, arguments);
                         try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                        try{ var bgm = document.getElementById('bgm'); if (window._bgmUserOn && bgm && bgm.src) { bgm.play().catch(()=>{}); var iconMusic = document.getElementById('iconMusic'); if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); } } } catch(e){}
                         return res;
                     };
                     window._restartWrapped = true;
@@ -345,6 +418,34 @@
             // try again until restart appears (engine may attach later)
             var t = setInterval(function(){ if (wrapRestart()){ clearInterval(t); } }, 120);
         }
+    })();
+    </script>
+    <script>
+    // Debug helper: periodically spawn a visible powerup orb so the user can see powerups falling.
+    // This is non-invasive: it uses the existing global spawnOrb function and only runs during play.
+    (function(){
+        try{
+            // Toggle this to false to disable the debug spawns
+            window._debugSpawnPowerups = true;
+            function spawnDebugPowerup(){
+                if (!window._debugSpawnPowerups) return;
+                if (typeof spawnOrb !== 'function') return;
+                // only spawn while game has started and not game over
+                if (!window.started || window.gameOver) return;
+                // don't spam: keep at most 1 debug powerup on screen
+                try{
+                    var existing = (window.orbs || []).filter(o => o.isPowerup).length;
+                    if (existing > 1) return;
+                }catch(e){}
+                var types = ['shield','clock','magnet'];
+                var t = types[Math.floor(Math.random() * types.length)];
+                var W = window.innerWidth || 800;
+                var x = Math.max(40, Math.min(W - 40, Math.floor(Math.random() * (W - 80)) + 40));
+                try{ spawnOrb({ isPowerup: true, powerupType: t, x: x }); }catch(e){}
+            }
+            // Spawn every ~8 seconds while playing
+            setInterval(spawnDebugPowerup, 8000);
+        }catch(e){ console.warn('debug powerup injector failed', e); }
     })();
     </script>
     <script>
