@@ -30,9 +30,12 @@ document.getElementById('btnRetry').addEventListener('click', () => {
             iconRetry.style.transition = '';
         }, 400);
     }
+    // Ensure play/pause icon is in sync after restart
+    if (typeof syncPlayPauseIcon === 'function') syncPlayPauseIcon();
 });
 document.getElementById('btnOverlayRestart').addEventListener('click', () => {
     if (window.restart) window.restart();
+    if (typeof syncPlayPauseIcon === 'function') syncPlayPauseIcon();
 });
 
 const bgm = document.getElementById('bgm');

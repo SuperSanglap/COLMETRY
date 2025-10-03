@@ -19,7 +19,7 @@
     position: fixed;
     bottom: 14px;
     right: 14px;
-    z-index: 1105; /* sit above HUD and overlays when needed so buttons are always clickable */
+    z-index: 2000; /* sit above HUD and start overlays so buttons are visible on home screen */
     display: flex;
     flex-direction: row;
     gap: 18px;
@@ -37,6 +37,16 @@
     border: none;
     cursor: pointer;
     transition: background 0.2s, box-shadow 0.2s;
+    opacity: 1; /* ensure visible even if parent inherits dim */
+    pointer-events: auto;
+    position: relative;
+    z-index: 2005; /* ensure each button sits above overlays */
+    border: 1px solid rgba(255,255,255,0.06);
+    background: linear-gradient(180deg, rgba(255,255,255,0.02), rgba(0,0,0,0.12));
+}
+.game-btn-row .icon-btn:hover {
+    box-shadow: 0 10px 30px rgba(63,208,255,0.12);
+    transform: translateY(-2px);
 }
 .game-btn-row .icon-btn:hover {
     background: #22304a;

@@ -140,6 +140,8 @@
                 }
                 // hide footer credit during play
                 var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                // show control buttons now that we're leaving the start screen
+                var gb = document.querySelector('.game-btn-row'); if (gb) gb.style.display = 'flex';
                 // restore UI buttons (make sure pause/retry work and styles reset)
                 if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
                 // call game starter if available
@@ -220,6 +222,8 @@
                         }
                         // hide footer credit during play
                         var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                        // show control buttons now that we're leaving the start screen
+                        var gb2 = document.querySelector('.game-btn-row'); if (gb2) gb2.style.display = 'flex';
                         // restore UI buttons so pause/retry are active
                         if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
                         try{
@@ -309,6 +313,66 @@
                 mo.observe(overlayMain, { attributes: true, attributeFilter: ['class','style'] });
             }catch(e){}
         })();
+    })();
+    </script>
+    <script>
+    // Hide control buttons on initial load (home screen). They'll be shown when Play is clicked.
+    (function(){
+        try{
+            var gb = document.querySelector('.game-btn-row');
+            if (gb) gb.style.display = 'none';
+        }catch(e){}
+    })();
+
+    // Robust restart wrapper: wrap existing restart or wait and wrap; ensure syncPlayPauseIcon runs after restart
+    (function(){
+        function wrapRestart(){
+            try{
+                if (typeof window.restart === 'function' && !window._restartWrapped){
+                    var orig = window.restart;
+                    window.restart = function(){
+                        var res = orig.apply(this, arguments);
+                        try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                        return res;
+                    };
+                    window._restartWrapped = true;
+                    return true;
+                }
+            }catch(e){ }
+            return false;
+        }
+        if (!wrapRestart()){
+            // try again until restart appears (engine may attach later)
+            var t = setInterval(function(){ if (wrapRestart()){ clearInterval(t); } }, 120);
+        }
+    })();
+    </script>
+    <script>
+    // Monkey-patch restart: ensure syncPlayPauseIcon is called whenever restart runs
+    (function(){
+        try{
+            if (typeof window.restart === 'function') {
+                var orig = window.restart;
+                window.restart = function(){
+                    var res = orig.apply(this, arguments);
+                    try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                    return res;
+                };
+            } else {
+                // If restart is not yet defined, attach a safe wrapper to call sync when it becomes available
+                var _check = setInterval(function(){
+                    if (typeof window.restart === 'function'){
+                        clearInterval(_check);
+                        var orig2 = window.restart;
+                        window.restart = function(){
+                            var res = orig2.apply(this, arguments);
+                            try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+                            return res;
+                        };
+                    }
+                }, 120);
+            }
+        }catch(e){ console.warn('restart wrapper failed', e); }
     })();
     </script>
 </body>
