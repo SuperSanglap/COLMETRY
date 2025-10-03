@@ -19,7 +19,7 @@
     position: fixed;
     bottom: 14px;
     right: 14px;
-    z-index: 9;
+    z-index: 1105; /* sit above HUD and overlays when needed so buttons are always clickable */
     display: flex;
     flex-direction: row;
     gap: 18px;
@@ -155,6 +155,95 @@
 }
 .start-cta:hover {
     color: #3fd0ff;
+}
+/* Start overlay enhancements */
+.start-header {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+.start-card {
+    padding: 22px;
+    max-width: 560px;
+}
+.game-title {
+    font-size: 3.6rem;
+    letter-spacing: 0.04em;
+    color: #7ef2ff;
+    text-shadow: 0 8px 40px rgba(126,242,255,0.12), 0 2px 8px rgba(0,0,0,0.6);
+}
+.subtitle {
+    color: rgba(255,255,255,0.75);
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: lowercase;
+}
+.howto { text-align:left; max-width:480px; margin: 0 auto 18px auto; }
+.start-cta {
+    display: inline-block;
+    padding: 14px 28px;
+    border-radius: 999px;
+    background: linear-gradient(90deg,#00bfff,#7a43ff);
+    color: #061621;
+    font-weight: 900;
+    box-shadow: 0 10px 40px rgba(122,67,255,0.18), 0 2px 8px rgba(0,0,0,0.4);
+    cursor: pointer;
+    transition: transform 0.12s ease, box-shadow 0.12s ease;
+}
+.start-cta:hover { transform: translateY(-4px); box-shadow: 0 18px 60px rgba(122,67,255,0.22); }
+
+/* Decorative orbs in start header (subtle, animated) */
+.start-orbs { position: relative; width: 220px; height: 44px; }
+.orb { position: absolute; border-radius: 50%; opacity: 0.9; filter: blur(6px); }
+.o1 { width: 30px; height: 30px; left: 10px; top: 8px; background: #ff7a7a; animation: orb-float 6s ease-in-out infinite; }
+.o2 { width: 22px; height: 22px; left: 70px; top: 4px; background: #ffd36a; animation: orb-float 5.2s ease-in-out infinite; }
+.o3 { width: 26px; height: 26px; left: 120px; top: 10px; background: #6ce0ff; animation: orb-float 5.8s ease-in-out infinite; }
+.o4 { width: 18px; height: 18px; left: 180px; top: 6px; background: #c78bff; animation: orb-float 6.4s ease-in-out infinite; }
+
+@keyframes orb-float {
+    0% { transform: translateY(0) translateX(0) scale(1); }
+    50% { transform: translateY(-8px) translateX(4px) scale(1.05); }
+    100% { transform: translateY(0) translateX(0) scale(1); }
+}
+
+/* Falling decorative elements */
+.fall-container { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 5; }
+.fall { position: absolute; bottom: 120%; width: 18px; height: 18px; border-radius: 50%; opacity: 0.9; filter: blur(2px); }
+.fall.c1 { background: #ff7a7a; left: 10%; animation: fall 8s linear infinite; }
+.fall.c2 { background: #ffd36a; left: 28%; width: 12px; height: 12px; animation: fall 6.6s linear infinite; }
+.fall.c3 { background: #6ce0ff; left: 46%; animation: fall 7.4s linear infinite; }
+.fall.c4 { background: #c78bff; left: 64%; width: 14px; height: 14px; animation: fall 7.8s linear infinite; }
+.fall.c5 { background: #7ef2ff; left: 82%; width: 10px; height: 10px; animation: fall 6.2s linear infinite; }
+
+@keyframes fall {
+    0% { transform: translateY(0) rotate(0deg); opacity: 0; }
+    10% { opacity: 0.9; }
+    100% { transform: translateY(130vh) rotate(360deg); opacity: 0.1; }
+}
+/* Additional falling shapes: stars and squares with slow rotation */
+.fall.star {
+    width: 20px; height: 20px; background: transparent; left: 18%;
+    animation: fall-star 9.6s linear infinite; filter: drop-shadow(0 6px 16px rgba(255,255,255,0.08));
+}
+.fall.square {
+    width: 16px; height: 16px; background: #ffd36a; left: 36%; border-radius:4px;
+    animation: fall-square 8.8s linear infinite; filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+}
+.fall.star:before {
+    content: '✦'; display: block; font-size: 18px; line-height: 18px; text-align: center; color: #fff8; text-shadow: 0 2px 8px rgba(126,242,255,0.12);
+}
+
+@keyframes fall-star {
+    0% { transform: translateY(0) rotate(0deg) scale(0.9); opacity: 0; }
+    12% { opacity: 0.95; }
+    100% { transform: translateY(130vh) rotate(540deg) scale(1.05); opacity: 0.08; }
+}
+@keyframes fall-square {
+    0% { transform: translateY(0) rotate(8deg) scale(0.95); opacity: 0; }
+    10% { opacity: 0.9; }
+    100% { transform: translateY(130vh) rotate(-360deg) scale(1); opacity: 0.06; }
 }
 /* Credit line on start overlay */
 .credit {

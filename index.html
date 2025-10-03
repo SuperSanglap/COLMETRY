@@ -38,14 +38,14 @@
 
         <div class="game-btn-row">
             <button class="control-btn icon-btn" id="btnMusic" title="Music">
-                <i class="fa-solid fa-music"></i>
+                <i id="iconMusic" class="fa-solid fa-music"></i>
             </button>
             <button class="control-btn icon-btn" id="btnPause" title="Pause/Play">
                 <i id="faPause" class="fa-solid fa-pause"></i>
                 <i id="faPlay" class="fa-solid fa-play" style="display:none;"></i>
             </button>
             <button class="control-btn icon-btn" id="btnRetry" title="Retry">
-                <i class="fa-solid fa-rotate-right"></i>
+                <i id="iconRetry" class="fa-solid fa-rotate-right"></i>
             </button>
         </div>
 
@@ -68,19 +68,91 @@
     <div class="overlay start-overlay" id="tutorialOverlay" style="display:flex;">
         <canvas id="startBgCanvas" class="start-bg-canvas"></canvas>
         <div class="start-content">
-            <div id="coloroidTitle" class="game-title"></div>
-            <div class="card">
+            <div class="start-header">
+                <div class="start-orbs" aria-hidden="true">
+                    <span class="orb o1"></span>
+                    <span class="orb o2"></span>
+                    <span class="orb o3"></span>
+                    <span class="orb o4"></span>
+                </div>
+                <div id="coloroidTitle" class="game-title">Coloroid</div>
+                <div class="subtitle">fast reflexes • color matching • powerups</div>
+            </div>
+
+            <div class="card start-card">
                 <h2>How to Play</h2>
-                <ul style="text-align:left;max-width:400px;margin:0 auto 1em auto;">
-                    <li>Move your mouse to control the paddle.</li>
+                <ul class="howto">
+                    <li>Move the mouse to control the paddle.</li>
                     <li>Hold <b>left mouse button</b> to shrink the paddle for precision.</li>
                     <li>Catch orbs matching the current color for points.</li>
                     <li>Avoid wrong colors, collect powerups, and survive!</li>
                 </ul>
-                <div class="start-cta">Click anywhere to play</div>
+                <button id="startBtn" class="start-cta">Play Now</button>
             </div>
         </div>
+        <!-- Falling decorative elements container -->
+        <div class="fall-container" aria-hidden="true">
+            <div class="fall c1"></div>
+            <div class="fall c2"></div>
+            <div class="fall c3"></div>
+            <div class="fall c4"></div>
+            <div class="fall c5"></div>
+            <!-- New shapes -->
+            <div class="fall star"></div>
+            <div class="fall square"></div>
+        </div>
     </div>
+
+    <script>
+    // Make the start overlay click-safe: only the Play Now button starts the game.
+    (function(){
+        var overlay = document.getElementById('tutorialOverlay');
+        var startBtn = document.getElementById('startBtn');
+        // Only prevent clicks that target the overlay background itself.
+        // This lets interactive children (buttons/links) receive events normally.
+        if(overlay){
+            overlay.addEventListener('click', function(e){
+                if(e.target === overlay) {
+                    e.stopPropagation();
+                }
+            });
+        }
+
+        // Start game only when Play Now is clicked
+        if(startBtn){
+            startBtn.addEventListener('click', function(e){
+                // prevent bubbling but don't block other handlers on the button
+                e.stopPropagation();
+                // hide overlay visually and remove it so nothing blocks input
+                if (overlay) {
+                    overlay.style.display = 'none';
+                    try { overlay.style.pointerEvents = 'none'; } catch(e){}
+                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                }
+                // re-enable game container pointer events so canvas receives input
+                var gameContainer = document.querySelector('.game-container');
+                if (gameContainer) gameContainer.style.pointerEvents = '';
+                // request fullscreen for immersive play (if available)
+                if (document.documentElement.requestFullscreen) {
+                    document.documentElement.requestFullscreen().catch(()=>{});
+                } else if (document.documentElement.webkitRequestFullscreen) {
+                    document.documentElement.webkitRequestFullscreen();
+                }
+                // hide footer credit during play
+                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                // restore UI buttons (make sure pause/retry work and styles reset)
+                if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
+                // call game starter if available
+                try{
+                    if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
+                    else if(typeof window.startGame === 'function') window.startGame();
+                }catch(err){
+                    console.warn('start button pressed, but start function not found', err);
+                }
+            });
+        }
+    })();
+    </script>
 
         <!-- Mobile Block Overlay -->
         <div class="overlay" id="mobileOverlay" style="display:none;">
@@ -118,7 +190,127 @@
     </div>
 
     <script src="JS/script.js"></script>
+    <script>
+    // After engine script loads, remove any click-to-play listener attached by the engine
+    // by cloning the overlay node (cloning removes event listeners). Then reattach
+    // a dedicated Play button handler so only the Play Now button starts the game.
+    (function(){
+        try{
+            var old = document.getElementById('tutorialOverlay');
+            if(old && old.parentNode){
+                var clone = old.cloneNode(true);
+                // preserve inline styles
+                clone.style.display = old.style.display;
+                old.parentNode.replaceChild(clone, old);
+                // rewire start button on cloned overlay
+                var startBtn = clone.querySelector('#startBtn');
+                if(startBtn){
+                    startBtn.addEventListener('click', function(e){
+                        e.stopPropagation();
+                        // hide and remove the cloned overlay so it can't block input
+                        clone.style.display = 'none';
+                        try { clone.style.pointerEvents = 'none'; } catch(e){}
+                        if (clone.parentNode) clone.parentNode.removeChild(clone);
+                        var gameContainer = document.querySelector('.game-container');
+                        if (gameContainer) gameContainer.style.pointerEvents = '';
+                        if (document.documentElement.requestFullscreen) {
+                            document.documentElement.requestFullscreen().catch(()=>{});
+                        } else if (document.documentElement.webkitRequestFullscreen) {
+                            document.documentElement.webkitRequestFullscreen();
+                        }
+                        // hide footer credit during play
+                        var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                        // restore UI buttons so pause/retry are active
+                        if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
+                        try{
+                            if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
+                            else if(typeof window.startGame === 'function') window.startGame();
+                        }catch(err){ console.warn('start failed', err); }
+                    });
+                }
+            }
+        }catch(err){ console.warn('overlay clone failed', err); }
+    })();
+    </script>
     <script src="JS/main.js"></script>
+    <script>
+    // Ensure UI buttons (pause/retry/music/overlay) are bound and visually reset when the game starts.
+    (function(){
+        function ensure(id, evt, fn) {
+            var el = document.getElementById(id);
+            if (!el) return;
+            // Remove duplicate listeners by cloning if necessary
+            try { el.replaceWith(el.cloneNode(true)); } catch(e) {}
+            el = document.getElementById(id);
+            if (el) el.addEventListener(evt, fn);
+        }
+
+        window._restoreUIButtons = function() {
+            // Re-bind handlers present in JS/main.js if not bound
+            try{
+                // Pause button
+                ensure('btnPause','click', function(){ if (window.togglePause) window.togglePause(); if (window.syncPlayPauseIcon) window.syncPlayPauseIcon(); });
+                // Retry
+                ensure('btnRetry','click', function(){ if (window.restart) window.restart(); });
+                // Overlay restart
+                ensure('btnOverlayRestart','click', function(){ if (window.restart) window.restart(); });
+                // Music toggle: use audio element's paused state and update icon
+                ensure('btnMusic','click', function(){
+                    var bgmEl = document.getElementById('bgm');
+                    var iconMusic = document.getElementById('iconMusic');
+                    if (!bgmEl) return;
+                    if (!bgmEl.src) {
+                        alert('No music source set. Add a file URL to the <audio> element src attribute in the code to enable music.');
+                        return;
+                    }
+                    if (bgmEl.paused) {
+                        bgmEl.play().catch(()=>{});
+                        if (iconMusic) iconMusic.textContent = '🔊';
+                    } else {
+                        bgmEl.pause();
+                        if (iconMusic) iconMusic.textContent = '🔈';
+                    }
+                });
+                // Reset visual state: ensure play/pause icon synced
+                if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon();
+                // Reset small transforms (retry icon)
+                var iconRetry = document.getElementById('iconRetry'); if (iconRetry) { iconRetry.style.transform = ''; iconRetry.style.transition = ''; }
+                // Ensure control buttons look active (remove dimming)
+                var controls = document.querySelectorAll('.game-btn-row .control-btn');
+                controls.forEach(c => { c.style.opacity = ''; c.style.pointerEvents = ''; });
+                // Ensure the canvas and game container accept pointer events
+                try{
+                    var gameCanvas = document.getElementById('game');
+                    if (gameCanvas) { gameCanvas.style.pointerEvents = 'auto'; gameCanvas.style.zIndex = 0; }
+                    var gameContainer = document.querySelector('.game-container');
+                    if (gameContainer) gameContainer.style.pointerEvents = '';
+                }catch(e){}
+                // Hide footer credit while game is active
+                try { var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none'; } catch(e){}
+            }catch(e){ console.warn('restore UI buttons failed', e); }
+        };
+
+        // Call once in case game already started
+        window.addEventListener('load', function(){ setTimeout(function(){ if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons(); }, 60); });
+        // Observe the main overlay (#overlay) and re-show the footer credit when overlay becomes visible (e.g., game over)
+        (function(){
+            try{
+                var overlayMain = document.getElementById('overlay');
+                var foot = document.querySelector('.footer-credit');
+                if (!overlayMain || !foot) return;
+                var mo = new MutationObserver(function(m){
+                    m.forEach(function(rec){
+                        if (rec.attributeName === 'class' || rec.attributeName === 'style'){
+                            var disp = window.getComputedStyle(overlayMain).display;
+                            if (disp === 'flex' || disp === 'block') { foot.style.display = ''; }
+                        }
+                    });
+                });
+                mo.observe(overlayMain, { attributes: true, attributeFilter: ['class','style'] });
+            }catch(e){}
+        })();
+    })();
+    </script>
 </body>
 
 </html>

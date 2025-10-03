@@ -1,8 +1,6 @@
-Fix the icons of top-left
 paddle shapes and so
 The Magnet Issue
 powerup counter around the icons
-Developer name and details on home-screen
 Better looking home-screen
 On-Mobile There will be caution of not-availablity but with ads
 Game Music
