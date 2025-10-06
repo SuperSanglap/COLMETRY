@@ -148,8 +148,19 @@
                 } else if (document.documentElement.webkitRequestFullscreen) {
                     document.documentElement.webkitRequestFullscreen();
                 }
-                // hide footer credit during play
-                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                // Show footer credit only when home (tutorial) or main overlay is visible; hide during gameplay
+                var foot = document.querySelector('.footer-credit');
+                if (foot) {
+                    var tut = document.getElementById('tutorialOverlay');
+                    var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
+                    var mainOverlay = document.getElementById('overlay');
+                    var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
+                    if (tutVis || mainVis) {
+                        foot.style.display = 'flex';
+                    } else {
+                        foot.style.display = 'none';
+                    }
+                }
                 // show control buttons now that we're leaving the start screen
                 showControls();
                 // restore UI buttons (make sure pause/retry work and styles reset)
@@ -347,7 +358,7 @@
                     if (gameContainer) gameContainer.style.pointerEvents = '';
                 }catch(e){}
                 // hide footer credit during play
-                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'flex';
+                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
             }catch(e){ /* restore UI buttons failed (ignored) */ }
         };
 
@@ -447,3 +458,27 @@
 </body>
 
 </html>
+
+    <script>
+    // Ensure footer credit is visible on the tutorial/home overlay.
+    // Some parts of the code may hide the footer; this makes the home-screen rule authoritative.
+    (function(){
+        try{
+            var foot = document.querySelector('.footer-credit');
+            var tut = document.getElementById('tutorialOverlay');
+            if (!foot || !tut) return;
+            function ensureOnHome(){
+                try{
+                    var tutVis = window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
+                    if (tutVis) foot.style.display = 'flex';
+                }catch(e){}
+            }
+            // Run immediately and shortly after load (guard against race conditions)
+            ensureOnHome();
+            window.addEventListener('load', function(){ setTimeout(ensureOnHome, 80); });
+            // Watch for visibility changes on the tutorial overlay
+            var mo = new MutationObserver(function(){ ensureOnHome(); });
+            mo.observe(tut, { attributes: true, attributeFilter: ['style','class'] });
+        }catch(e){}
+    })();
+    </script>
