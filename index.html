@@ -2,53 +2,58 @@
 <html lang="en">
 
 <head>
-        <meta charset="UTF-8" />
-        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-        <title>COLMETRY — Color. Catch. Conquer.</title>
-        <!-- Primary SEO -->
-        <meta name="description" content="COLMETRY — a fast-paced browser game about color matching and powerups. Play in your browser: catch matching orbs, avoid wrong colors, collect powerups, and aim for a high score." />
-        <meta name="keywords" content="COLMETRY, color matching game, browser game, HTML5 game, reflex game, powerups, arcade" />
-        <meta name="author" content="Sanglap (SuperSanglap)" />
-        <meta name="robots" content="index, follow" />
-        <link rel="canonical" href="https://colmetry.world" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>COLMETRY — Color. Catch. Conquer.</title>
+    <!-- Primary SEO -->
+    <meta name="description"
+        content="COLMETRY — a fast-paced browser game about color matching and powerups. Play in your browser: catch matching orbs, avoid wrong colors, collect powerups, and aim for a high score." />
+    <meta name="keywords"
+        content="COLMETRY, color matching game, browser game, HTML5 game, reflex game, powerups, arcade" />
+    <meta name="author" content="Sanglap (SuperSanglap)" />
+    <meta name="robots" content="index, follow" />
+    <link rel="canonical" href="https://colmetry.world" />
 
-        <!-- Mobile / theme -->
-        <meta name="theme-color" content="#08120A" />
+    <!-- Mobile / theme -->
+    <meta name="theme-color" content="#08120A" />
 
-        <!-- Open Graph (Facebook, LinkedIn, Slack previews) -->
-        <meta property="og:title" content="COLMETRY" />
-        <meta property="og:description" content="Color. Catch. Conquer. — Play COLMETRY in your browser. Catch matching orbs, use powerups, and beat your high score." />
-        <meta property="og:type" content="game" />
-        <meta property="og:url" content="https://colmetry.world" />
-        <meta property="og:image" content="/CSS/colmetry-preview.png" />
+    <!-- Open Graph (Facebook, LinkedIn, Slack previews) -->
+    <meta property="og:title" content="COLMETRY" />
+    <meta property="og:description"
+        content="Color. Catch. Conquer. — Play COLMETRY in your browser. Catch matching orbs, use powerups, and beat your high score." />
+    <meta property="og:type" content="game" />
+    <meta property="og:url" content="https://colmetry.world" />
+    <meta property="og:image" content="/CSS/colmetry-preview.png" />
 
-        <!-- Twitter Card -->
-        <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:site" content="@SuperSanglap" />
-        <meta name="twitter:title" content="COLMETRY" />
-        <meta name="twitter:description" content="Color. Catch. Conquer. — Play COLMETRY in your browser." />
-        <meta name="twitter:image" content="/CSS/colmetry-preview.png" />
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@SuperSanglap" />
+    <meta name="twitter:title" content="COLMETRY" />
+    <meta name="twitter:description" content="Color. Catch. Conquer. — Play COLMETRY in your browser." />
+    <meta name="twitter:image" content="/CSS/colmetry-preview.png" />
 
-        <!-- Structured data (JSON-LD) for rich results -->
-        <script type="application/ld+json">
-        {
-            "@context": "https://colmetry.world",
+    <!-- Structured data (JSON-LD) for rich results -->
+    <script type="application/ld+json">
+            {
+            "@context": "https://schema.org",
             "@type": "VideoGame",
             "name": "COLMETRY",
             "url": "https://colmetry.world",
-            "description": "Color. Catch. Conquer.COLMETRY is a fast-paced browser game about color matching, reflexes, and powerups.",
+            "description": "Color. Catch. Conquer. COLMETRY is a fast-paced browser game about color matching, reflexes, and powerups.",
             "publisher": {
-                "@type": "Person",
+                "@type": "Organization",
                 "name": "Sanglap"
             },
-            "image": "/CSS/colmetry-preview.png",
+            "image": "https://colmetry.world/CSS/colmetry-preview.png",
             "inLanguage": "en-US"
-        }
-        </script>
+            }
+    </script>
 
-        <link rel="stylesheet" href="CSS/style.css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-        <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <link rel="stylesheet" href="CSS/style.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css"
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/js/all.min.js" crossorigin="anonymous"
+        referrerpolicy="no-referrer"></script>
 </head>
 
 <body>
@@ -91,7 +96,7 @@
             </button>
         </div>
 
-    <audio id="bgm" loop src="SFX/bgm.mp3"></audio>
+        <audio id="bgm" loop src="SFX/bgm.mp3"></audio>
 
         <div class="overlay" id="overlay">
             <div class="card">
@@ -107,419 +112,423 @@
             </div>
         </div>
         <!-- Start Screen Overlay -->
-    <div class="overlay start-overlay" id="tutorialOverlay" style="display:flex;">
-        <canvas id="startBgCanvas" class="start-bg-canvas"></canvas>
-        <div class="start-content">
-            <div class="start-header">
-                <div class="start-orbs" aria-hidden="true">
-                    <span class="orb o1"></span>
-                    <span class="orb o2"></span>
-                    <span class="orb o3"></span>
-                    <span class="orb o4"></span>
+        <div class="overlay start-overlay" id="tutorialOverlay" style="display:flex;">
+            <canvas id="startBgCanvas" class="start-bg-canvas"></canvas>
+            <div class="start-content">
+                <div class="start-header">
+                    <div class="start-orbs" aria-hidden="true">
+                        <span class="orb o1"></span>
+                        <span class="orb o2"></span>
+                        <span class="orb o3"></span>
+                        <span class="orb o4"></span>
+                    </div>
+                    <div id="coloroidTitle" class="game-title">COLMETRY</div>
+                    <div class="subtitle">Color. Catch. Conquer.</div>
                 </div>
-                <div id="coloroidTitle" class="game-title">COLMETRY</div>
-                <div class="subtitle">Color. Catch. Conquer.</div>
-            </div>
 
-            <div class="card start-card">
-                <h2>How to Play</h2>
-                <ul class="howto">
-                    <li>Move the mouse to control the paddle.</li>
-                    <li>Hold <b>left mouse button</b> to shrink the paddle for precision.</li>
-                    <li>Catch orbs matching the current color for points.</li>
-                    <li>Avoid wrong colors, collect powerups, and survive!</li>
-                </ul>
-                <button id="startBtn" class="start-cta">Play Now</button>
+                <div class="card start-card">
+                    <h2>How to Play</h2>
+                    <ul class="howto">
+                        <li>Move the mouse to control the paddle.</li>
+                        <li>Hold <b>left mouse button</b> to shrink the paddle for precision.</li>
+                        <li>Catch orbs matching the current color for points.</li>
+                        <li>Avoid wrong colors, collect powerups, and survive!</li>
+                    </ul>
+                    <button id="startBtn" class="start-cta">Play Now</button>
+                </div>
+            </div>
+            <!-- Falling decorative elements container -->
+            <div class="fall-container" aria-hidden="true">
+                <div class="fall c1"></div>
+                <div class="fall c2"></div>
+                <div class="fall c3"></div>
+                <div class="fall c4"></div>
+                <div class="fall c5"></div>
+                <!-- New shapes -->
+                <div class="fall star"></div>
+                <div class="fall square"></div>
             </div>
         </div>
-        <!-- Falling decorative elements container -->
-        <div class="fall-container" aria-hidden="true">
-            <div class="fall c1"></div>
-            <div class="fall c2"></div>
-            <div class="fall c3"></div>
-            <div class="fall c4"></div>
-            <div class="fall c5"></div>
-            <!-- New shapes -->
-            <div class="fall star"></div>
-            <div class="fall square"></div>
-        </div>
-    </div>
 
-    <script>
-    // Make the start overlay click-safe: only the Play Now button starts the game.
-    (function(){
-        // Centralized control show/hide helpers (exposed globally)
-        window.showControls = function(){
-            try{ var gb = document.querySelector('.game-btn-row'); if (gb){ gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; } }catch(e){}
-        };
-        window.hideControls = function(){
-            try{ var gb = document.querySelector('.game-btn-row'); if (gb){ gb.style.display = 'none'; gb.style.pointerEvents = 'none'; } }catch(e){}
-        };
-        var overlay = document.getElementById('tutorialOverlay');
-        var startBtn = document.getElementById('startBtn');
-        // Only prevent clicks that target the overlay background itself.
-        // This lets interactive children (buttons/links) receive events normally.
-        if(overlay){
-            overlay.addEventListener('click', function(e){
-                if(e.target === overlay) {
-                    e.stopPropagation();
-                }
-            });
-        }
-
-        // Start game only when Play Now is clicked
-        if(startBtn){
-            startBtn.addEventListener('click', function(e){
-                // prevent bubbling but don't block other handlers on the button
-                e.stopPropagation();
-                // hide overlay visually and remove it so nothing blocks input
+        <script>
+            // Make the start overlay click-safe: only the Play Now button starts the game.
+            (function () {
+                // Centralized control show/hide helpers (exposed globally)
+                window.showControls = function () {
+                    try { var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; } } catch (e) { }
+                };
+                window.hideControls = function () {
+                    try { var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'none'; gb.style.pointerEvents = 'none'; } } catch (e) { }
+                };
+                var overlay = document.getElementById('tutorialOverlay');
+                var startBtn = document.getElementById('startBtn');
+                // Only prevent clicks that target the overlay background itself.
+                // This lets interactive children (buttons/links) receive events normally.
                 if (overlay) {
-                    overlay.style.display = 'none';
-                    try { overlay.style.pointerEvents = 'none'; } catch(e){}
-                    if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
-                    // unlock home so capture blockers allow game input
-                    try{ window._homeLocked = false; }catch(e){}
+                    overlay.addEventListener('click', function (e) {
+                        if (e.target === overlay) {
+                            e.stopPropagation();
+                        }
+                    });
                 }
-                // re-enable game container pointer events so canvas receives input
-                var gameContainer = document.querySelector('.game-container');
-                if (gameContainer) gameContainer.style.pointerEvents = '';
-                // request fullscreen for immersive play (if available)
-                if (document.documentElement.requestFullscreen) {
-                    document.documentElement.requestFullscreen().catch(()=>{});
-                } else if (document.documentElement.webkitRequestFullscreen) {
-                    document.documentElement.webkitRequestFullscreen();
-                }
-                // Show footer credit only when home (tutorial) or main overlay is visible; hide during gameplay
-                var foot = document.querySelector('.footer-credit');
-                if (foot) {
-                    var tut = document.getElementById('tutorialOverlay');
-                    var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
-                    var mainOverlay = document.getElementById('overlay');
-                    var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
-                    if (tutVis || mainVis) {
-                        foot.style.display = 'flex';
-                    } else {
-                        foot.style.display = 'none';
-                    }
-                }
-                // show control buttons now that we're leaving the start screen
-                showControls();
-                // restore UI buttons (make sure pause/retry work and styles reset)
-                if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
-                // call game starter if available
-                try{
-                    if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
-                    else if(typeof window.startGame === 'function') window.startGame();
-                }catch(err){
-                    console.warn('start button pressed, but start function not found', err);
-                }
-                // Start BGM (allowed because Play button is a user gesture). Set user preference to on.
-                try{
-                    var bgmEl = document.getElementById('bgm');
-                    var iconMusic = document.getElementById('iconMusic');
-                    if (bgmEl && bgmEl.src) {
-                        bgmEl.play().then(function(){
-                            window._bgmUserOn = true;
-                            if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
-                        }).catch(function(err){
-                            // Playback blocked by browser/autoplay policy or other issue
-                            console.warn('BGM play blocked or failed', err);
-                            window._bgmUserOn = false;
-                            if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-xmark'); }
-                        });
-                    }
-                }catch(e){}
-            });
-        }
-    })();
-    </script>
 
-    <script>
-    // Extra protection: while the tutorial overlay is visible, block input events that are not
-    // the Play button or the footer credit. Register capture-phase handlers before the engine
-    // script loads so we can block engine-attached listeners on pointer events as well.
-    (function(){
-        var overlay = document.getElementById('tutorialOverlay');
-        if (!overlay) return;
-        function shouldAllow(e){ return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link')); }
-        function blocker(e){
-            try{
-                var currentOverlay = document.getElementById('tutorialOverlay');
-                if (!currentOverlay) return; // Don't block if overlay is removed
-                var disp = window.getComputedStyle(currentOverlay).display;
-                if (disp === 'none' || disp === '') return; // Don't block if overlay is hidden
-                if (shouldAllow(e)) return;
-                e.stopImmediatePropagation(); e.preventDefault();
-            }catch(err){}
-        }
-        // Block common input event types in capture phase
-        ['click','pointerdown','mousedown','touchstart'].forEach(function(ev){ document.addEventListener(ev, blocker, true); });
-    })();
-    </script>
+                // Start game only when Play Now is clicked
+                if (startBtn) {
+                    startBtn.addEventListener('click', function (e) {
+                        // prevent bubbling but don't block other handlers on the button
+                        e.stopPropagation();
+                        // hide overlay visually and remove it so nothing blocks input
+                        if (overlay) {
+                            overlay.style.display = 'none';
+                            try { overlay.style.pointerEvents = 'none'; } catch (e) { }
+                            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                            // unlock home so capture blockers allow game input
+                            try { window._homeLocked = false; } catch (e) { }
+                        }
+                        // re-enable game container pointer events so canvas receives input
+                        var gameContainer = document.querySelector('.game-container');
+                        if (gameContainer) gameContainer.style.pointerEvents = '';
+                        // request fullscreen for immersive play (if available)
+                        if (document.documentElement.requestFullscreen) {
+                            document.documentElement.requestFullscreen().catch(() => { });
+                        } else if (document.documentElement.webkitRequestFullscreen) {
+                            document.documentElement.webkitRequestFullscreen();
+                        }
+                        // Show footer credit only when home (tutorial) or main overlay is visible; hide during gameplay
+                        var foot = document.querySelector('.footer-credit');
+                        if (foot) {
+                            var tut = document.getElementById('tutorialOverlay');
+                            var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
+                            var mainOverlay = document.getElementById('overlay');
+                            var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
+                            if (tutVis || mainVis) {
+                                foot.style.display = 'flex';
+                            } else {
+                                foot.style.display = 'none';
+                            }
+                        }
+                        // show control buttons now that we're leaving the start screen
+                        showControls();
+                        // restore UI buttons (make sure pause/retry work and styles reset)
+                        if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
+                        // call game starter if available
+                        try {
+                            if (typeof window.startColoroidGame === 'function') window.startColoroidGame();
+                            else if (typeof window.startGame === 'function') window.startGame();
+                        } catch (err) {
+                            console.warn('start button pressed, but start function not found', err);
+                        }
+                        // Start BGM (allowed because Play button is a user gesture). Set user preference to on.
+                        try {
+                            var bgmEl = document.getElementById('bgm');
+                            var iconMusic = document.getElementById('iconMusic');
+                            if (bgmEl && bgmEl.src) {
+                                bgmEl.play().then(function () {
+                                    window._bgmUserOn = true;
+                                    if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark', 'fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
+                                }).catch(function (err) {
+                                    // Playback blocked by browser/autoplay policy or other issue
+                                    console.warn('BGM play blocked or failed', err);
+                                    window._bgmUserOn = false;
+                                    if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-xmark'); }
+                                });
+                            }
+                        } catch (e) { }
+                    });
+                }
+            })();
+        </script>
+
+        <script>
+            // Extra protection: while the tutorial overlay is visible, block input events that are not
+            // the Play button or the footer credit. Register capture-phase handlers before the engine
+            // script loads so we can block engine-attached listeners on pointer events as well.
+            (function () {
+                var overlay = document.getElementById('tutorialOverlay');
+                if (!overlay) return;
+                function shouldAllow(e) { return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link')); }
+                function blocker(e) {
+                    try {
+                        var currentOverlay = document.getElementById('tutorialOverlay');
+                        if (!currentOverlay) return; // Don't block if overlay is removed
+                        var disp = window.getComputedStyle(currentOverlay).display;
+                        if (disp === 'none' || disp === '') return; // Don't block if overlay is hidden
+                        if (shouldAllow(e)) return;
+                        e.stopImmediatePropagation(); e.preventDefault();
+                    } catch (err) { }
+                }
+                // Block common input event types in capture phase
+                ['click', 'pointerdown', 'mousedown', 'touchstart'].forEach(function (ev) { document.addEventListener(ev, blocker, true); });
+            })();
+        </script>
 
         <!-- Mobile Block Overlay -->
         <div class="overlay" id="mobileOverlay" style="display:none;">
             <div class="card">
                 <h2>PC Only</h2>
-                <p>This game is designed for desktop/laptop computers.<br>Please open on a PC for the best experience.</p>
+                <p>This game is designed for desktop/laptop computers.<br>Please open on a PC for the best experience.
+                </p>
             </div>
         </div>
 
         <!-- Footer credit -->
-        <div class="footer-credit" style="position:fixed;left:0;right:0;bottom:8px;z-index:1010;pointer-events:auto;display:flex;justify-content:center;">
-            <div class="credit small" style="padding:6px 10px;background:rgba(8,12,18,0.6);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-                made with <span style="color: crimson;">♥</span> by <a id="credit-link" href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">Sanglap</a>
+        <div class="footer-credit"
+            style="position:fixed;left:0;right:0;bottom:8px;z-index:1010;pointer-events:auto;display:flex;justify-content:center;">
+            <div class="credit small"
+                style="padding:6px 10px;background:rgba(8,12,18,0.6);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
+                made with <span style="color: crimson;">♥</span> by <a id="credit-link"
+                    href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">Sanglap</a>
             </div>
         </div>
 
         <script>
-        // Prevent clicks on the credit link from starting the game (stop propagation)
-        (function(){
-            var link = document.getElementById('credit-link');
-            if(link){
-                link.addEventListener('click', function(e){
-                    e.stopPropagation();
-                    // allow normal link behavior (opening in new tab)
-                });
-            }
-            var creditBox = document.querySelector('.footer-credit');
-            if(creditBox){
-                creditBox.addEventListener('click', function(e){
-                    e.stopPropagation();
-                });
-            }
-        })();
+            // Prevent clicks on the credit link from starting the game (stop propagation)
+            (function () {
+                var link = document.getElementById('credit-link');
+                if (link) {
+                    link.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                        // allow normal link behavior (opening in new tab)
+                    });
+                }
+                var creditBox = document.querySelector('.footer-credit');
+                if (creditBox) {
+                    creditBox.addEventListener('click', function (e) {
+                        e.stopPropagation();
+                    });
+                }
+            })();
         </script>
     </div>
 
     <script src="JS/script.js"></script>
     <script>
-    // After engine script loads, remove any click-to-play listener attached by the engine
-    // by cloning the overlay node (cloning removes event listeners). Then reattach
-    // a dedicated Play button handler so only the Play Now button starts the game.
-    (function(){
-        try{
-            var old = document.getElementById('tutorialOverlay');
-            if (old && old.parentNode) {
-                var clone = old.cloneNode(true);
-                clone.style.display = old.style.display;
-                old.parentNode.replaceChild(clone, old);
-                var startBtn = clone.querySelector('#startBtn');
-                if (startBtn) {
-                    startBtn.addEventListener('click', function(e){
-                        e.stopPropagation();
-                        // remove clone so it can't block input
-                        clone.style.display = 'none';
-                        try { clone.style.pointerEvents = 'none'; } catch(e){}
-                        if (clone.parentNode) clone.parentNode.removeChild(clone);
-                        try{ window._homeLocked = false; }catch(e){}
-                        var gameContainer = document.querySelector('.game-container');
-                        if (gameContainer) gameContainer.style.pointerEvents = '';
-                        if (document.documentElement.requestFullscreen) {
-                            document.documentElement.requestFullscreen().catch(()=>{});
-                        } else if (document.documentElement.webkitRequestFullscreen) {
-                            document.documentElement.webkitRequestFullscreen();
-                        }
-                        var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
-                        showControls();
-                        if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
-                        try{
-                            if(typeof window.startColoroidGame === 'function') window.startColoroidGame();
-                            else if(typeof window.startGame === 'function') window.startGame();
-                        }catch(err){ /* start failed (ignored) */ }
-                        try{
-                            var bgmEl2 = document.getElementById('bgm'); var iconMusic2 = document.getElementById('iconMusic');
-                            if (bgmEl2 && bgmEl2.src) {
-                                bgmEl2.play().then(function(){
-                                    window._bgmUserOn = true;
-                                    if (iconMusic2) { iconMusic2.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic2.classList.add('fa-volume-high'); }
-                                }).catch(function(err){
-                                    window._bgmUserOn = false;
-                                    if (iconMusic2) { iconMusic2.classList.remove('fa-volume-high'); iconMusic2.classList.add('fa-volume-xmark'); }
-                                });
+        // After engine script loads, remove any click-to-play listener attached by the engine
+        // by cloning the overlay node (cloning removes event listeners). Then reattach
+        // a dedicated Play button handler so only the Play Now button starts the game.
+        (function () {
+            try {
+                var old = document.getElementById('tutorialOverlay');
+                if (old && old.parentNode) {
+                    var clone = old.cloneNode(true);
+                    clone.style.display = old.style.display;
+                    old.parentNode.replaceChild(clone, old);
+                    var startBtn = clone.querySelector('#startBtn');
+                    if (startBtn) {
+                        startBtn.addEventListener('click', function (e) {
+                            e.stopPropagation();
+                            // remove clone so it can't block input
+                            clone.style.display = 'none';
+                            try { clone.style.pointerEvents = 'none'; } catch (e) { }
+                            if (clone.parentNode) clone.parentNode.removeChild(clone);
+                            try { window._homeLocked = false; } catch (e) { }
+                            var gameContainer = document.querySelector('.game-container');
+                            if (gameContainer) gameContainer.style.pointerEvents = '';
+                            if (document.documentElement.requestFullscreen) {
+                                document.documentElement.requestFullscreen().catch(() => { });
+                            } else if (document.documentElement.webkitRequestFullscreen) {
+                                document.documentElement.webkitRequestFullscreen();
                             }
-                        }catch(e){}
-                    });
+                            var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                            showControls();
+                            if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons();
+                            try {
+                                if (typeof window.startColoroidGame === 'function') window.startColoroidGame();
+                                else if (typeof window.startGame === 'function') window.startGame();
+                            } catch (err) { /* start failed (ignored) */ }
+                            try {
+                                var bgmEl2 = document.getElementById('bgm'); var iconMusic2 = document.getElementById('iconMusic');
+                                if (bgmEl2 && bgmEl2.src) {
+                                    bgmEl2.play().then(function () {
+                                        window._bgmUserOn = true;
+                                        if (iconMusic2) { iconMusic2.classList.remove('fa-volume-xmark', 'fa-volume-off'); iconMusic2.classList.add('fa-volume-high'); }
+                                    }).catch(function (err) {
+                                        window._bgmUserOn = false;
+                                        if (iconMusic2) { iconMusic2.classList.remove('fa-volume-high'); iconMusic2.classList.add('fa-volume-xmark'); }
+                                    });
+                                }
+                            } catch (e) { }
+                        });
+                    }
                 }
-            }
-        }catch(err){ /* overlay clone failed (ignored) */ }
-    })();
+            } catch (err) { /* overlay clone failed (ignored) */ }
+        })();
     </script>
     <script src="JS/main.js"></script>
     <script>
-    // Ensure UI buttons (pause/retry/music/overlay) are bound and visually reset when the game starts.
-    (function(){
-        function ensure(id, evt, fn) {
-            var el = document.getElementById(id);
-            if (!el) return;
-            // Remove duplicate listeners by cloning if necessary
-            try { el.replaceWith(el.cloneNode(true)); } catch(e) {}
-            el = document.getElementById(id);
-            if (el) el.addEventListener(evt, fn);
-        }
+        // Ensure UI buttons (pause/retry/music/overlay) are bound and visually reset when the game starts.
+        (function () {
+            function ensure(id, evt, fn) {
+                var el = document.getElementById(id);
+                if (!el) return;
+                // Remove duplicate listeners by cloning if necessary
+                try { el.replaceWith(el.cloneNode(true)); } catch (e) { }
+                el = document.getElementById(id);
+                if (el) el.addEventListener(evt, fn);
+            }
 
-        window._restoreUIButtons = function() {
-            // Re-bind handlers present in JS/main.js if not bound
-            try{
-                // Pause button
-                ensure('btnPause','click', function(){ if (window.togglePause) window.togglePause(); if (window.syncPlayPauseIcon) window.syncPlayPauseIcon(); });
-                // Retry
-                ensure('btnRetry','click', function(){ if (window.restart) window.restart(); });
-                // Overlay restart
-                ensure('btnOverlayRestart','click', function(){ if (window.restart) window.restart(); });
-                // Music toggle: use audio element's paused state and update icon
-                ensure('btnMusic','click', function(){
-                    var bgmEl = document.getElementById('bgm');
-                    var iconMusic = document.getElementById('iconMusic');
-                    if (!bgmEl) return;
-                    if (!bgmEl.src) {
-                        alert('No music source set. Add a file URL to the <audio> element src attribute in the code to enable music.');
-                        return;
-                    }
-                    if (bgmEl.paused) {
-                        bgmEl.play().catch(()=>{});
-                        if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
-                    } else {
-                        bgmEl.pause();
-                        if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
-                    }
-                });
-                // Reset visual state: ensure play/pause icon synced
-                if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon();
-                // Reset small transforms (retry icon)
-                var iconRetry = document.getElementById('iconRetry'); if (iconRetry) { iconRetry.style.transform = ''; iconRetry.style.transition = ''; }
-                // Ensure control buttons look active (remove dimming)
-                var controls = document.querySelectorAll('.game-btn-row .control-btn');
-                controls.forEach(c => { c.style.opacity = ''; c.style.pointerEvents = ''; });
-                // Ensure the canvas and game container accept pointer events
-                try{
-                    var gameCanvas = document.getElementById('game');
-                    if (gameCanvas) { gameCanvas.style.pointerEvents = 'auto'; gameCanvas.style.zIndex = 0; }
-                    var gameContainer = document.querySelector('.game-container');
-                    if (gameContainer) gameContainer.style.pointerEvents = '';
-                }catch(e){}
-                // hide footer credit during play
-                var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
-            }catch(e){ /* restore UI buttons failed (ignored) */ }
-        };
-
-        // Call once in case game already started
-        window.addEventListener('load', function(){ setTimeout(function(){ if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons(); }, 60); });
-        // Observe the main overlay (#overlay) and re-show the footer credit when overlay becomes visible (e.g., game over)
-        (function(){
-            try{
-                var overlayMain = document.getElementById('overlay');
-                var foot = document.querySelector('.footer-credit');
-                if (!overlayMain || !foot) return;
-                var mo = new MutationObserver(function(m){
-                    m.forEach(function(rec){
-                        if (rec.attributeName === 'class' || rec.attributeName === 'style'){
-                            var tut = document.getElementById('tutorialOverlay');
-                            var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
-                            var mainOverlay = document.getElementById('overlay');
-                            var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
-
-                            if (tutVis || mainVis) { 
-                                foot.style.display = 'flex'; // Show on home or game over screen
-                            } else {
-                                foot.style.display = 'none'; // Hide during gameplay
-                            }
-                            try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
+            window._restoreUIButtons = function () {
+                // Re-bind handlers present in JS/main.js if not bound
+                try {
+                    // Pause button
+                    ensure('btnPause', 'click', function () { if (window.togglePause) window.togglePause(); if (window.syncPlayPauseIcon) window.syncPlayPauseIcon(); });
+                    // Retry
+                    ensure('btnRetry', 'click', function () { if (window.restart) window.restart(); });
+                    // Overlay restart
+                    ensure('btnOverlayRestart', 'click', function () { if (window.restart) window.restart(); });
+                    // Music toggle: use audio element's paused state and update icon
+                    ensure('btnMusic', 'click', function () {
+                        var bgmEl = document.getElementById('bgm');
+                        var iconMusic = document.getElementById('iconMusic');
+                        if (!bgmEl) return;
+                        if (!bgmEl.src) {
+                            alert('No music source set. Add a file URL to the <audio> element src attribute in the code to enable music.');
+                            return;
+                        }
+                        if (bgmEl.paused) {
+                            bgmEl.play().catch(() => { });
+                            if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark', 'fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
+                        } else {
+                            bgmEl.pause();
+                            if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
                         }
                     });
-                });
-                mo.observe(overlayMain, { attributes: true, attributeFilter: ['class','style'] });
-            }catch(e){}
+                    // Reset visual state: ensure play/pause icon synced
+                    if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon();
+                    // Reset small transforms (retry icon)
+                    var iconRetry = document.getElementById('iconRetry'); if (iconRetry) { iconRetry.style.transform = ''; iconRetry.style.transition = ''; }
+                    // Ensure control buttons look active (remove dimming)
+                    var controls = document.querySelectorAll('.game-btn-row .control-btn');
+                    controls.forEach(c => { c.style.opacity = ''; c.style.pointerEvents = ''; });
+                    // Ensure the canvas and game container accept pointer events
+                    try {
+                        var gameCanvas = document.getElementById('game');
+                        if (gameCanvas) { gameCanvas.style.pointerEvents = 'auto'; gameCanvas.style.zIndex = 0; }
+                        var gameContainer = document.querySelector('.game-container');
+                        if (gameContainer) gameContainer.style.pointerEvents = '';
+                    } catch (e) { }
+                    // hide footer credit during play
+                    var foot = document.querySelector('.footer-credit'); if (foot) foot.style.display = 'none';
+                } catch (e) { /* restore UI buttons failed (ignored) */ }
+            };
+
+            // Call once in case game already started
+            window.addEventListener('load', function () { setTimeout(function () { if (typeof window._restoreUIButtons === 'function') window._restoreUIButtons(); }, 60); });
+            // Observe the main overlay (#overlay) and re-show the footer credit when overlay becomes visible (e.g., game over)
+            (function () {
+                try {
+                    var overlayMain = document.getElementById('overlay');
+                    var foot = document.querySelector('.footer-credit');
+                    if (!overlayMain || !foot) return;
+                    var mo = new MutationObserver(function (m) {
+                        m.forEach(function (rec) {
+                            if (rec.attributeName === 'class' || rec.attributeName === 'style') {
+                                var tut = document.getElementById('tutorialOverlay');
+                                var tutVis = tut && window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
+                                var mainOverlay = document.getElementById('overlay');
+                                var mainVis = mainOverlay && window.getComputedStyle(mainOverlay).display !== 'none' && window.getComputedStyle(mainOverlay).display !== '';
+
+                                if (tutVis || mainVis) {
+                                    foot.style.display = 'flex'; // Show on home or game over screen
+                                } else {
+                                    foot.style.display = 'none'; // Hide during gameplay
+                                }
+                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch (e) { }
+                            }
+                        });
+                    });
+                    mo.observe(overlayMain, { attributes: true, attributeFilter: ['class', 'style'] });
+                } catch (e) { }
+            })();
         })();
-    })();
     </script>
     <script>
-    // Hide control buttons on initial load (home screen). They'll be shown when Play is clicked.
-    (function(){
-        try{
-            hideControls();
-        }catch(e){}
-    })();
+        // Hide control buttons on initial load (home screen). They'll be shown when Play is clicked.
+        (function () {
+            try {
+                hideControls();
+            } catch (e) { }
+        })();
 
-    <!-- pointer blockers moved earlier to ensure they run before engine handlers -->
+        <!-- pointer blockers moved earlier to ensure they run before engine handlers -->
 
-    // Robust restart wrapper: wrap existing restart or wait and wrap; ensure syncPlayPauseIcon runs after restart
-    (function(){
-        function wrapRestart(){
-            try{
-                if (typeof window.restart === 'function' && !window._restartWrapped){
-                    var orig = window.restart;
-                    window.restart = function(){
-                        var res = orig.apply(this, arguments);
-                        try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
-                        try{ var bgm = document.getElementById('bgm'); if (window._bgmUserOn && bgm && bgm.src) { bgm.play().catch(()=>{}); var iconMusic = document.getElementById('iconMusic'); if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); } } } catch(e){}
-                        return res;
-                    };
-                    window._restartWrapped = true;
-                    return true;
-                }
-            }catch(e){ }
-            return false;
-        }
-        if (!wrapRestart()){
-            // try again until restart appears (engine may attach later)
-            var t = setInterval(function(){ if (wrapRestart()){ clearInterval(t); } }, 120);
-        }
-    })();
+        // Robust restart wrapper: wrap existing restart or wait and wrap; ensure syncPlayPauseIcon runs after restart
+        (function () {
+            function wrapRestart() {
+                try {
+                    if (typeof window.restart === 'function' && !window._restartWrapped) {
+                        var orig = window.restart;
+                        window.restart = function () {
+                            var res = orig.apply(this, arguments);
+                            try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch (e) { }
+                            try { var bgm = document.getElementById('bgm'); if (window._bgmUserOn && bgm && bgm.src) { bgm.play().catch(() => { }); var iconMusic = document.getElementById('iconMusic'); if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark', 'fa-volume-off'); iconMusic.classList.add('fa-volume-high'); } } } catch (e) { }
+                            return res;
+                        };
+                        window._restartWrapped = true;
+                        return true;
+                    }
+                } catch (e) { }
+                return false;
+            }
+            if (!wrapRestart()) {
+                // try again until restart appears (engine may attach later)
+                var t = setInterval(function () { if (wrapRestart()) { clearInterval(t); } }, 120);
+            }
+        })();
     </script>
     <!-- debug powerup injector removed -->
     <script>
-    // Monkey-patch restart: ensure syncPlayPauseIcon is called whenever restart runs
-    (function(){
-        try{
-            if (typeof window.restart === 'function') {
-                var orig = window.restart;
-                window.restart = function(){
-                    var res = orig.apply(this, arguments);
-                    try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
-                    return res;
-                };
-            } else {
-                // If restart is not yet defined, attach a safe wrapper to call sync when it becomes available
-                var _check = setInterval(function(){
-                    if (typeof window.restart === 'function'){
-                        clearInterval(_check);
-                        var orig2 = window.restart;
-                        window.restart = function(){
-                            var res = orig2.apply(this, arguments);
-                            try{ if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch(e){}
-                            return res;
-                        };
-                    }
-                }, 120);
-            }
-    }catch(e){ /* restart wrapper failed (ignored) */ }
-    })();
+        // Monkey-patch restart: ensure syncPlayPauseIcon is called whenever restart runs
+        (function () {
+            try {
+                if (typeof window.restart === 'function') {
+                    var orig = window.restart;
+                    window.restart = function () {
+                        var res = orig.apply(this, arguments);
+                        try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch (e) { }
+                        return res;
+                    };
+                } else {
+                    // If restart is not yet defined, attach a safe wrapper to call sync when it becomes available
+                    var _check = setInterval(function () {
+                        if (typeof window.restart === 'function') {
+                            clearInterval(_check);
+                            var orig2 = window.restart;
+                            window.restart = function () {
+                                var res = orig2.apply(this, arguments);
+                                try { if (typeof window.syncPlayPauseIcon === 'function') window.syncPlayPauseIcon(); } catch (e) { }
+                                return res;
+                            };
+                        }
+                    }, 120);
+                }
+            } catch (e) { /* restart wrapper failed (ignored) */ }
+        })();
     </script>
 </body>
 
 </html>
 
-    <script>
+<script>
     // Ensure footer credit is visible on the tutorial/home overlay.
     // Some parts of the code may hide the footer; this makes the home-screen rule authoritative.
-    (function(){
-        try{
+    (function () {
+        try {
             var foot = document.querySelector('.footer-credit');
             var tut = document.getElementById('tutorialOverlay');
             if (!foot || !tut) return;
-            function ensureOnHome(){
-                try{
+            function ensureOnHome() {
+                try {
                     var tutVis = window.getComputedStyle(tut).display !== 'none' && window.getComputedStyle(tut).display !== '';
                     if (tutVis) foot.style.display = 'flex';
-                }catch(e){}
+                } catch (e) { }
             }
             // Run immediately and shortly after load (guard against race conditions)
             ensureOnHome();
-            window.addEventListener('load', function(){ setTimeout(ensureOnHome, 80); });
+            window.addEventListener('load', function () { setTimeout(ensureOnHome, 80); });
             // Watch for visibility changes on the tutorial overlay
-            var mo = new MutationObserver(function(){ ensureOnHome(); });
-            mo.observe(tut, { attributes: true, attributeFilter: ['style','class'] });
-        }catch(e){}
+            var mo = new MutationObserver(function () { ensureOnHome(); });
+            mo.observe(tut, { attributes: true, attributeFilter: ['style', 'class'] });
+        } catch (e) { }
     })();
-    </script>
+</script>
