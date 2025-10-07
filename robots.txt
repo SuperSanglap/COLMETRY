@@ -1,0 +1,10 @@
+# robots.txt for colmetry.world
+# Allow all user agents by default and point to the sitemap
+User-agent: *
+Allow: /
+
+# Crawl-delay can be added for slow sites, but most modern crawlers ignore it
+# Crawl-delay: 2
+
+Sitemap: https://colmetry.world/sitemap.xml
+Host: https://colmetry.world
