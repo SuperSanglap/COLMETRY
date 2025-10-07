@@ -7,7 +7,7 @@ function isMobile() {
 // Show overlays and block game on mobile
 window.addEventListener('DOMContentLoaded', function() {
     // Render animated background for start overlay
-    function drawStartBg() {
+    function drawStartBgOnce() {
         const canvas = document.getElementById('startBgCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
@@ -36,41 +36,95 @@ window.addEventListener('DOMContentLoaded', function() {
         }
         ctx.globalAlpha = 1;
     }
-    function animateStartBg() {
-        drawStartBg();
-        if (document.getElementById('tutorialOverlay').style.display === 'flex') {
-            requestAnimationFrame(animateStartBg);
+
+    // Continuous animation loop for start background while tutorial overlay exists
+    function startBgLoop() {
+        const canvas = document.getElementById('startBgCanvas');
+        if (!canvas) return;
+        drawStartBgOnce();
+        // keep animating only while tutorial overlay is present and visible
+        const t = document.getElementById('tutorialOverlay');
+        if (t && window.getComputedStyle(t).display !== 'none') {
+            window._startBgAnimId = requestAnimationFrame(startBgLoop);
+        } else {
+            try { if (window._startBgAnimId) { cancelAnimationFrame(window._startBgAnimId); window._startBgAnimId = null; } } catch(e){}
         }
     }
-    // Render multi-colored title
-    function renderColoroidTitle() {
-        const title = 'COLMETRY';
-        const colors = [
-            '#FF385F', '#FF7100', '#FFE925', '#73FA2E', '#11B5EA', '#9C1DF8', '#fff', '#00FFD0', '#FF4B4B', '#FFA33C', '#FFD93D', '#4ADE80', '#60A5FA', '#A78BFA'
-        ];
-        const el = document.getElementById('coloroidTitle');
-        if (!el) return;
-        el.innerHTML = '';
-        for (let i = 0; i < title.length; i++) {
-            const span = document.createElement('span');
-            span.textContent = title[i];
-            span.style.color = colors[Math.floor(Math.random() * colors.length)];
-            el.appendChild(span);
-        }
+    // kick off the start bg animation if overlay is present
+    try { setTimeout(startBgLoop, 80); } catch(e){}
+    // Title colorizer: assign each character of #coloroidTitle a random color from the palette (single run)
+    function randomizeTitleColors() {
+        try {
+            var el = document.getElementById('coloroidTitle');
+            if (!el) return;
+            var text = el.textContent || el.innerText || 'COLMETRY';
+            // Build color set from the game's palette constants (PALETTE_BASE). Exclude white/GOLDEN.
+            var cset = PALETTE_BASE.map(function(p){ return (p && p.fill) ? p.fill : null; }).filter(Boolean);
+            try { if (HEART_COLOR && HEART_COLOR.trim() && HEART_COLOR.toUpperCase() !== (GOLDEN || '').toUpperCase()) cset.push(HEART_COLOR.trim()); } catch(e){}
+            var goldenVal = (GOLDEN || '').toUpperCase();
+            cset = cset.filter(function(col){ return col && col.toUpperCase() !== goldenVal; });
+            if (cset.length === 0) { cset = PALETTE_BASE.map(p=>p.fill).filter(f=>f && f.toUpperCase() !== goldenVal); }
+
+            // Prepare unique-per-character assignment. Keep order random by shuffling.
+            var pool = cset.slice();
+            try { pool = shuffle(pool); } catch(e) { /* fallback: use as-is */ }
+            // Count non-space characters to color
+            var letters = text.split('').filter(function(ch){ return ch.trim() !== ''; }).length;
+            // If we don't have enough distinct colors, repeat the shuffled pool until we have enough
+            var assigned = [];
+            while (assigned.length < letters) {
+                assigned = assigned.concat(pool.slice(0, Math.min(pool.length, letters - assigned.length)));
+                if (pool.length === 0) break; // safety
+            }
+
+            // Build spans, consuming assigned colors in order for non-space characters
+            var parts = [];
+            var idx = 0;
+            for (var i = 0; i < text.length; i++) {
+                var ch = text[i];
+                if (ch.trim() === '') { parts.push(ch); continue; }
+                var col = assigned[idx % assigned.length] || cset[Math.floor(Math.random() * cset.length)];
+                // outline using webkit-text-stroke and a subtle multi-shadow fallback
+                var span = '<span style="color:' + col + '; -webkit-text-stroke:1px rgba(0,0,0,0.85); text-shadow:0 0 2px rgba(0,0,0,0.6), 0 1px 0 rgba(0,0,0,0.6);">' + ch + '</span>';
+                parts.push(span);
+                idx++;
+            }
+            el.innerHTML = parts.join('');
+        } catch (e) { }
     }
-    // On overlay show, render bg and title
-    if (document.getElementById('tutorialOverlay').style.display === 'flex') {
-        renderColoroidTitle();
-        animateStartBg();
-    }
-    // Re-render on resize
-    window.addEventListener('resize', function() {
-        if (document.getElementById('tutorialOverlay').style.display === 'flex') {
-            drawStartBg();
+    // Run once shortly after load so the title is colorized randomly on the home screen
+    try { setTimeout(randomizeTitleColors, 120); } catch (e) {}
+
+    // Re-run randomization whenever the tutorial overlay is shown or inserted into the DOM
+    try {
+        function observeTutorialOverlay() {
+            try {
+                var checkAndRun = function() {
+                    var t = document.getElementById('tutorialOverlay');
+                    if (t && window.getComputedStyle(t).display !== 'none') {
+                        randomizeTitleColors();
+                    }
+                };
+                // Initial check
+                checkAndRun();
+                // Observe body for new nodes (overlay may be cloned and reinserted)
+                var mo = new MutationObserver(function(muts){
+                    for (var m of muts) {
+                        if (m.type === 'childList') {
+                            for (var n of m.addedNodes) {
+                                if (n && (n.id === 'tutorialOverlay' || (n.querySelector && n.querySelector('#tutorialOverlay')))) { checkAndRun(); return; }
+                            }
+                        } else if (m.type === 'attributes') {
+                            if (m.target && m.target.id === 'tutorialOverlay') { checkAndRun(); }
+                        }
+                    }
+                });
+                mo.observe(document.body, { childList:true, subtree:true, attributes:true, attributeFilter:['style','class'] });
+            } catch(e){}
         }
-    });
-    const tutorial = document.getElementById('tutorialOverlay');
-    const mobile = document.getElementById('mobileOverlay');
+        observeTutorialOverlay();
+    } catch(e){}
+    // (duplicate endGame/restart removed — single canonical implementations exist earlier in the file)
     const gameContainer = document.querySelector('.game-container');
 
     // Show tutorial overlay
@@ -217,6 +271,9 @@ let palettePulse = 0;
 let paddleBounce = 0;
 let powerupTimers = { shield: 0, clock: 0, magnet: 0 };
 let lastPowerupSpawn = -POWERUP_MIN_SPAWN_DELAY * 2000; // allow spawn at start
+// Session guards to prevent powerup carry-over between restarts
+let powerupSessionId = 1;
+let powerupActiveSession = { shield: 0, clock: 0, magnet: 0 };
 // Startup / engine guard
 window._coloroidGameBlocked = window._coloroidGameBlocked === undefined ? true : window._coloroidGameBlocked;
 let engineRunning = false;
@@ -457,10 +514,13 @@ function activatePowerup(type) {
     if (type === 'shield') powerupTimers.shield = POWERUP_DURATION_SEC;
     if (type === 'clock') powerupTimers.clock = POWERUP_DURATION_SEC;
     if (type === 'magnet') powerupTimers.magnet = POWERUP_DURATION_SEC;
+    try { if (powerupActiveSession && typeof powerupSessionId !== 'undefined') powerupActiveSession[type] = powerupSessionId; } catch(e){}
 }
 
 function updatePowerups(dt) {
+    // Clear any timers that belong to a previous session
     for (const key in powerupTimers) {
+        try { if (powerupActiveSession[key] !== powerupSessionId) { powerupTimers[key] = 0; } } catch(e){}
         if (powerupTimers[key] > 0) {
             powerupTimers[key] -= dt;
             if (powerupTimers[key] < 0) powerupTimers[key] = 0;
@@ -623,6 +683,8 @@ function endGame() {
     gameOver = true; paused = true;
     overlayEl.classList.add('show');
     document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
+    // Reveal footer credit on game over / overlay
+    try{ var foot = document.querySelector('.footer-credit'); if (foot) { foot.style.display = 'flex'; foot.style.pointerEvents = 'auto'; } }catch(e){}
 }
 
 function restart() {
@@ -630,6 +692,21 @@ function restart() {
     lives = MAX_LIVES;
     mana = maxMana;
     orbs = [];
+    // Reset powerup timers so no powerups persist into the next session (preserve object identity)
+    try {
+        Object.keys(powerupTimers).forEach(function(k){ powerupTimers[k] = 0; });
+    } catch (e) { powerupTimers = { shield: 0, clock: 0, magnet: 0 }; }
+    // Bump session id to invalidate any previous powerup activations and clear active-session map
+    try { powerupSessionId = (powerupSessionId || 0) + 1; Object.keys(powerupActiveSession).forEach(k=>powerupActiveSession[k]=0); } catch(e){}
+    // Remove any UI indicators for active powerups
+    try {
+        document.body.classList.remove('powerup-active');
+        var pShield = document.getElementById('pwrShield'); if (pShield) pShield.style.opacity = 0.4;
+        var pClock = document.getElementById('pwrClock'); if (pClock) pClock.style.opacity = 0.4;
+        var pMag = document.getElementById('pwrMagnet'); if (pMag) pMag.style.opacity = 0.4;
+    } catch (e) {}
+    // Reset powerup spawn gating so new session can spawn powerups normally
+    try { canSpawnPowerup = true; lastPowerupSpawn = performance.now() - POWERUP_MIN_SPAWN_DELAY * 1000; lastPowerupType = null; } catch(e){}
     palette = PALETTE_BASE.slice();
     colorIndex = Math.floor(Math.random() * palette.length);
     nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
@@ -648,6 +725,8 @@ function restart() {
     // Hide mouse pointer on restart
     const gameCanvas = document.getElementById('game');
     if (gameCanvas) gameCanvas.style.cursor = 'none';
+    // Ensure footer credit stays hidden during gameplay
+    try{ var foot = document.querySelector('.footer-credit'); if (foot) { foot.style.display = 'none'; foot.style.pointerEvents = 'none'; } }catch(e){}
     setTimeout(() => { started = true; }, fallingDelay);
     if (animationFrameId) {
         cancelAnimationFrame(animationFrameId);
@@ -947,6 +1026,8 @@ function init() {
     pulse = 0; palettePulse = 0;
     started = false;
     canSpawnPowerup = true;
+    // bump session id to make any previous powerup activations invalid
+    try { powerupSessionId = (powerupSessionId || 0) + 1; Object.keys(powerupActiveSession).forEach(k=>powerupActiveSession[k]=0); } catch(e){}
     startTime = performance.now();
     // Hide mouse pointer on restart
     const gameCanvas = document.getElementById('game');
@@ -964,6 +1045,16 @@ window.startColoroidGame = function() {
     if (window._coloroidGameBlocked) {
         window._coloroidGameBlocked = false;
     }
+    // Ensure footer credit is hidden during gameplay so it doesn't overlay the canvas
+    try{
+        var foot = document.querySelector('.footer-credit');
+        if (foot) { foot.style.display = 'none'; foot.style.pointerEvents = 'none'; }
+    }catch(e){}
+    // Remove tutorial overlay (defensive) so it can't block input
+    try{
+        var t = document.getElementById('tutorialOverlay');
+        if (t && t.parentNode) { t.style.display = 'none'; t.parentNode.removeChild(t); }
+    }catch(e){}
     if (!engineRunning) init();
 };
 
@@ -1145,306 +1236,3 @@ function update(dt, now) {
     if (lives <= 0 && !gameOver) { endGame(); }
 }
 
-function endGame() {
-    gameOver = true; paused = true;
-    overlayEl.classList.add('show');
-    document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
-}
-
-function restart() {
-    score = 0;
-    lives = MAX_LIVES;
-    mana = maxMana;
-    orbs = [];
-    palette = PALETTE_BASE.slice();
-    colorIndex = Math.floor(Math.random() * palette.length);
-    nextPaletteSwapAt = performance.now() + PALETTE_SWAP_SEC * 1000;
-    lastSpawnAt = performance.now();
-    lastTime = performance.now();
-    elapsed = 0;
-    paused = false;
-    gameOver = false;
-    overlayEl.classList.remove('show');
-    resetPaddle();
-    paddleShrinkActive = false;
-    paddleShrinkTarget = 1;
-    paddleShrinkCurrent = 1;
-    paddleBounceAnim = 0;
-    updateManaBar();
-    // Hide mouse pointer on restart
-    const gameCanvas = document.getElementById('game');
-    if (gameCanvas) gameCanvas.style.cursor = 'none';
-    setTimeout(() => { started = true; }, fallingDelay);
-    if (animationFrameId) {
-        cancelAnimationFrame(animationFrameId);
-    }
-    animationFrameId = requestAnimationFrame(loop);
-}
-
-function togglePause() {
-    if (gameOver) return;
-    paused = !paused;
-    window.paused = paused;
-    // Toggle Font Awesome play/pause icons
-    if (typeof window.syncPlayPauseIcon === 'function') {
-        window.syncPlayPauseIcon();
-    }
-    // Show mouse pointer when paused
-    const gameCanvas = document.getElementById('game');
-    if (gameCanvas) gameCanvas.style.cursor = paused ? 'default' : 'none';
-    if (!paused) { lastTime = performance.now(); requestAnimationFrame(loop); }
-}
-
-// ==== RENDER DRAWING ====
-
-function draw(now) {
-    ctx.clearRect(0, 0, W, H);
-    ctx.save();
-    const bgWaveCount = 3;
-    for (let i = 0; i < bgWaveCount; i++) {
-        const t = now / 1000 + i * 2;
-        ctx.globalAlpha = 0.10 + 0.07 * Math.sin(t + i);
-        const grad = ctx.createLinearGradient(0, 0, W, H);
-        grad.addColorStop(0, `hsl(${200 + i * 30}, 80%, 18%)`);
-        grad.addColorStop(1, `hsl(${220 + i * 30}, 90%, 12%)`);
-        ctx.fillStyle = grad;
-        ctx.beginPath();
-        ctx.moveTo(0, H * (0.2 + 0.2 * Math.sin(t)));
-        for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * (0.2 + 0.2 * Math.sin(t + x / 200 + i)));
-        ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
-    }
-    ctx.restore();
-    for (const o of orbs) {
-        ctx.save();
-        ctx.translate(o.x, o.y - (o.bounceAnim ? o.bounceY : 0));
-        if (o.rot && !o.isHeart && !o.isPowerup && !o.isGolden) ctx.rotate(o.rot);
-
-        // Bubble: nearly transparent, not beating
-        if (o.bubble) {
-            ctx.save();
-            ctx.globalAlpha = 0.2;
-            ctx.beginPath();
-            ctx.arc(0, 0, o.r * 1.15, 0, Math.PI * 2);
-            ctx.fillStyle = "rgba(255,255,255,0.22)";
-            ctx.shadowColor = "#fff";
-            ctx.shadowBlur = 8;
-            ctx.fill();
-            ctx.restore();
-        }
-
-        if (o.isHeart) {
-            ctx.shadowBlur = 24; drawHeartPolygon(0, 0, o.r, HEART_COLOR);
-        }
-        else if (o.isPowerup) {
-            ctx.shadowBlur = 14; ctx.globalAlpha = 1.0;
-            drawPowerupIcon(ctx, o.powerupType, o.r);
-        }
-        else if (o.isGolden) {
-            ctx.shadowBlur = 26;
-            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, GOLDEN, true, o.beatScale || 1);
-        }
-        else if (o.shapeType === 'semicircle') {
-            drawSemiCircle(ctx, o.r, o.fill);
-        } else if (o.shapeType === 'triangle') {
-            drawPolygon(ctx, 3, o.r, o.fill, o.rot);
-        } else if (o.shapeType === 'square') {
-            ctx.beginPath(); ctx.rect(-o.r * 0.6, -o.r * 0.6, o.r * 1.2, o.r * 1.2);
-            ctx.fillStyle = o.fill; ctx.fill();
-        } else if (o.shapeType === 'pentagon') {
-            drawPolygon(ctx, 5, o.r, o.fill, o.rot);
-        } else if (o.shapeType === 'hexagon') {
-            drawPolygon(ctx, 6, o.r, o.fill, o.rot);
-        } else if (o.shapeType === 'star') {
-            drawStar(ctx, 0, 0, o.r, o.r * 0.45, 5, o.fill, false);
-        }
-        ctx.restore();
-    }
-
-    for (const popup of scorePopups) {
-        ctx.save();
-        ctx.globalAlpha = 1 - popup.t;
-        ctx.font = `bold ${Math.max(16, W * 0.018)}px system-ui, ui-sans-serif`;
-        ctx.fillStyle = popup.color || '#fff';
-        ctx.strokeStyle = 'rgba(0,0,0,0.5)';
-        ctx.lineWidth = 3;
-        ctx.strokeText(popup.val, popup.x, popup.y - 24 - popup.t * 32);
-        ctx.fillText(popup.val, popup.x, popup.y - 24 - popup.t * 32);
-        ctx.restore();
-    }
-
-    // Paddle: palette, scale, effect
-    let blinkNow = false;
-    const timeLeft = (nextPaletteSwapAt - now) / 1000;
-    if (palettePulse > 0) palettePulse -= 5;
-    let padColor;
-    let paletteScale = 1 + (palettePulse > 0 ? Math.max(0, Math.sin((palettePulse / 60) * Math.PI / 2)) * 0.25 : 0);
-    if (paddleBounce > 0) paletteScale += Math.sin(paddleBounce / 14 * Math.PI) * 0.16, paddleBounce--;
-
-    if (timeLeft <= 3 && timeLeft > 0) {
-        if (!draw.blinkActive) { draw.blinkActive = true; draw.blinkInterval = now; draw.blinkState = false; }
-        if (now - draw.blinkInterval > 200) { draw.blinkState = !draw.blinkState; draw.blinkInterval = now; }
-        blinkNow = draw.blinkState;
-    } else { draw.blinkActive = false; draw.blinkState = false; }
-    padColor = blinkNow ? palette[(colorIndex + 1) % palette.length].fill : palette[colorIndex].fill;
-
-    ctx.save();
-    ctx.translate(paddleX, getPaddleConfig().y + getPaddleConfig().h / 2);
-    ctx.scale(paletteScale, paletteScale);
-    // Bounce effect
-    let bounceScale = 1;
-    if (paddleBounceAnim > 0) {
-        bounceScale = 1 + Math.sin((18 - paddleBounceAnim) / 18 * Math.PI) * 0.22;
-        paddleBounceAnim--;
-    }
-    let paddleW = getPaddleWidth() * bounceScale;
-    let slimH = getPaddleConfig().h * bounceScale * 0.65;
-    ctx.fillStyle = padColor;
-    ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : padColor;
-    ctx.shadowBlur = 16 + (powerupTimers.shield > 0 ? 10 : 0);
-
-    // Always draw paddle as a rectangle
-    ctx.fillRect(-paddleW / 2, -slimH / 2, paddleW, slimH);
-
-    if (powerupTimers.shield > 0) {
-        ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 3;
-        ctx.strokeRect(-paddleW / 2 - 3, -slimH / 2 - 2, paddleW + 6, slimH + 4);
-        ctx.restore();
-    }
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#fff6";
-    ctx.strokeRect(-paddleW / 2 + 1, -slimH / 2 + 1, paddleW - 2, slimH - 2);
-    ctx.restore();
-
-    if (pulse > 0) pulse -= 16;
-
-
-    if (flash > 0) { ctx.save(); ctx.fillStyle = `rgba(255,0,0,${flash / 480})`; ctx.fillRect(0, 0, W, H); ctx.restore(); flash -= 16; }
-
-    uiScore.textContent = score;
-    uiTimer.textContent = Math.max(0, Math.ceil((nextPaletteSwapAt - now) / 1000));
-    uiCurrDot.style.background = palette[colorIndex].fill;
-    uiLives.innerHTML = '';
-    for (let i = 0; i < MAX_LIVES; i++) {
-        const s = document.createElement('span');
-        s.className = 'heart-ui' + (i < lives ? '' : ' dim');
-        uiLives.appendChild(s);
-    }
-    if (document.getElementById('pwrShield')) document.getElementById('pwrShield').style.opacity = powerupTimers.shield > 0 ? 1 : 0.4;
-    if (document.getElementById('pwrClock')) document.getElementById('pwrClock').style.opacity = powerupTimers.clock > 0 ? 1 : 0.4;
-    if (document.getElementById('pwrMagnet')) document.getElementById('pwrMagnet').style.opacity = powerupTimers.magnet > 0 ? 1 : 0.4;
-
-    if (mouseInGame) {
-        ctx.save();
-        // Use palette color (with blinking logic if desired)
-        let currPaletteColor = palette[colorIndex].fill;
-        let blink = false;
-        const timeLeft = (nextPaletteSwapAt - performance.now()) / 1000;
-        if (timeLeft <= 3 && timeLeft > 0) {
-            blink = Math.floor(performance.now() / 200) % 2 === 0;
-        }
-        if (blink) {
-            currPaletteColor = palette[(colorIndex + 1) % palette.length].fill;
-        }
-        // Pointer arrow coordinates
-        ctx.translate(mouseX, mouseY);
-        const SCALE = 1.5;
-        ctx.scale(SCALE, SCALE);
-        ctx.beginPath();
-        ctx.moveTo(0, 0);      // tip
-        ctx.lineTo(0, 24);     // left
-        ctx.lineTo(7, 14);     // up right
-        ctx.lineTo(7, 14);     // up more left
-        ctx.lineTo(20, 12);    // right (horizontal part)
-        ctx.closePath();
-        ctx.fillStyle = currPaletteColor;
-        ctx.shadowColor = "#fff";
-        ctx.shadowBlur = blink ? 16 : 0;
-        ctx.globalAlpha = 0.92;
-        ctx.fill();
-        // Border
-        ctx.lineWidth = 1.8;
-        ctx.globalAlpha = 0.63;
-        ctx.strokeStyle = "#111";
-        ctx.stroke();
-        ctx.restore();
-    }
-}
-
-// ---- DRAW SHAPES ----
-//  icons for powerups
-
-function drawPowerupIcon(ctx, type, r) {
-    ctx.save();
-    ctx.font = `${r * 1.15}px Arial`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    let emoji = '❓';
-    if (type === 'shield') emoji = '🛡️';
-    else if (type === 'clock') emoji = '⏰';
-    else if (type === 'magnet') emoji = '🧲';
-    ctx.fillText(emoji, 0, 2); // (x=0,y=2) centers nicely in orb
-    ctx.restore();
-}
-
-
-function drawPolygon(ctx, sides, r, color, rotation = 0) {
-    ctx.save(); ctx.rotate(rotation); ctx.beginPath();
-    for (let i = 0; i < sides; i++) {
-        const angle = Math.PI / 2 + i * (2 * Math.PI / sides);
-        const x = Math.cos(angle) * r;
-        const y = Math.sin(angle) * r;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.globalAlpha = 0.95 + 0.05 * Math.sin(Date.now() / 400);
-    ctx.shadowBlur = 14 + 6 * Math.abs(Math.sin(Date.now() / 540));
-    ctx.fill(); ctx.restore();
-}
-
-function drawSemiCircle(ctx, r, color) {
-    ctx.beginPath();
-    ctx.arc(0, 0, r, Math.PI, 1 * Math.PI, false);
-    ctx.lineTo(r, 0);
-    ctx.arc(0, 0, r, 0, Math.PI, false);
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.fill();
-}
-
-function drawHeartPolygon(cx, cy, s, color) {
-    const w = s * 1.2, h = s * 1.2;
-    const px = cx - w / 2, py = cy - h / 2;
-    const points = [[0.5, 0.8], [0, 0.4], [0.2, 0], [0.5, 0.2], [0.8, 0], [1, 0.4]];
-    ctx.beginPath();
-    for (let i = 0; i < points.length; i++) {
-        const [nx, ny] = points[i];
-        const x = px + nx * w;
-        const y = py + ny * h;
-        if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
-    }
-    ctx.closePath();
-    ctx.fillStyle = color || HEART_COLOR;
-    ctx.fill();
-}
-
-function drawStar(ctx, cx, cy, outerR, innerR, points, color, twinkle, beatScale) {
-    ctx.save();
-    if (beatScale) ctx.scale(beatScale, beatScale);
-    ctx.beginPath();
-    for (let i = 0; i < points * 2; i++) {
-        const angle = (Math.PI / points) * i;
-        const r = i % 2 === 0 ? outerR : innerR;
-        ctx.lineTo(cx + Math.cos(angle) * r, cy + Math.sin(angle) * r);
-    }
-    ctx.closePath();
-    ctx.fillStyle = color;
-    ctx.shadowColor = color == '#FFFFFF' ? '#eeeeee' : color;
-    ctx.shadowBlur = twinkle ? 40 : 24;
-    ctx.globalAlpha = twinkle ? (0.88 + 0.12 * Math.sin(Date.now() / 134)) : 1;
-    ctx.fill();
-    ctx.restore();
-}

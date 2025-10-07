@@ -155,10 +155,22 @@
             (function () {
                 // Centralized control show/hide helpers (exposed globally)
                 window.showControls = function () {
-                    try { var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; } } catch (e) { }
+                    try {
+                        var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; }
+                        // show HUD layers (score, lives, timer, powerups)
+                        var huds = document.querySelectorAll('.hud-layer'); huds.forEach(h=>{ h.style.display = 'flex'; h.style.pointerEvents = 'auto'; });
+                        // ensure mana bar (if present) is visible
+                        var m = document.getElementById('manaBar'); if (m) { m.style.display = ''; }
+                    } catch (e) { }
                 };
                 window.hideControls = function () {
-                    try { var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'none'; gb.style.pointerEvents = 'none'; } } catch (e) { }
+                    try {
+                        var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'none'; gb.style.pointerEvents = 'none'; }
+                        // hide HUD layers (score, lives, timer, powerups)
+                        var huds = document.querySelectorAll('.hud-layer'); huds.forEach(h=>{ h.style.display = 'none'; h.style.pointerEvents = 'none'; });
+                        // hide mana bar if present
+                        var m = document.getElementById('manaBar'); if (m) { m.style.display = 'none'; }
+                    } catch (e) { }
                 };
                 var overlay = document.getElementById('tutorialOverlay');
                 var startBtn = document.getElementById('startBtn');
@@ -182,6 +194,9 @@
                             overlay.style.display = 'none';
                             try { overlay.style.pointerEvents = 'none'; } catch (e) { }
                             if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+                            // stop the start-screen bg animation if running
+                            try { if (window._startBgAnimId) { cancelAnimationFrame(window._startBgAnimId); window._startBgAnimId = null; } } catch(e){}
+                            // title randomization is single-run; no cancel needed here
                             // unlock home so capture blockers allow game input
                             try { window._homeLocked = false; } catch (e) { }
                         }
@@ -246,7 +261,7 @@
             (function () {
                 var overlay = document.getElementById('tutorialOverlay');
                 if (!overlay) return;
-                function shouldAllow(e) { return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link')); }
+                function shouldAllow(e) { return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link') || e.target.closest('#music')); }
                 function blocker(e) {
                     try {
                         var currentOverlay = document.getElementById('tutorialOverlay');

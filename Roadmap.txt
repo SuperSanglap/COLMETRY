@@ -1,3 +1,5 @@
+!!!! Hide the top elements in the game mode.
+
 paddle shapes and so
 The Magnet Issue
 powerup counter around the icons
