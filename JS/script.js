@@ -690,7 +690,8 @@ function endGame() {
 function restart() {
     score = 0;
     lives = MAX_LIVES;
-    mana = maxMana;
+    // Start restart with zero mana by design
+    mana = 0;
     orbs = [];
     // Reset powerup timers so no powerups persist into the next session (preserve object identity)
     try {
@@ -1026,6 +1027,8 @@ function init() {
     pulse = 0; palettePulse = 0;
     started = false;
     canSpawnPowerup = true;
+    // ensure mana starts at 0 on initial init (design choice)
+    try { mana = 0; } catch (e) { mana = 0; }
     // bump session id to make any previous powerup activations invalid
     try { powerupSessionId = (powerupSessionId || 0) + 1; Object.keys(powerupActiveSession).forEach(k=>powerupActiveSession[k]=0); } catch(e){}
     startTime = performance.now();
@@ -1063,7 +1066,7 @@ if (!window._coloroidGameBlocked) {
     init();
 }
 
-let mana = 200;
+let mana = 0;
 const maxMana = 200;
 let manaBarEl = null;
 
