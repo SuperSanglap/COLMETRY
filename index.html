@@ -263,9 +263,6 @@
         </script>
 
         <script>
-            // Extra protection: while the tutorial overlay is visible, block input events that are not
-            // the Play button or the footer credit. Register capture-phase handlers before the engine
-            // script loads so we can block engine-attached listeners on pointer events as well.
             (function () {
                 var overlay = document.getElementById('tutorialOverlay');
                 if (!overlay) return;
@@ -300,7 +297,7 @@
             <div class="credit small"
                 style="padding:6px 10px;background:rgba(8,12,18,0.6);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
                 made with <span style="color: crimson;">♥</span> by <a id="credit-link"
-                    href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">Sanglap</a>
+                    href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">ZZeoN</a>
             </div>
         </div>
 
