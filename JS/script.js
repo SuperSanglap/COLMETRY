@@ -292,7 +292,7 @@ let paddleShrinkActive = false;
 let paddleShrinkTarget = 1;
 let paddleShrinkCurrent = 1;
 let paddleBounceAnim = 0;
-const HOVERBOARD_SCORE_STEP = 500;
+const HOVERBOARD_SCORE_STEP = 1000;
 const HOVERBOARD_CHANGE_DURATION = 0.55;
 const HOVERBOARD_ASPECT = 1200 / 120;
 const HOVERBOARD_SOURCES = [
@@ -313,9 +313,12 @@ const hoverboardRenderCanvas = document.createElement('canvas');
 hoverboardRenderCanvas.width = 512;
 hoverboardRenderCanvas.height = Math.round(512 / HOVERBOARD_ASPECT);
 const hoverboardRenderCtx = hoverboardRenderCanvas.getContext('2d');
+// Extra transparent room lets the Shield sit outside the board instead of tinting it.
+const HOVERBOARD_SHIELD_PADDING_X = 12;
+const HOVERBOARD_SHIELD_PADDING_Y = 8;
 const hoverboardShieldCanvas = document.createElement('canvas');
-hoverboardShieldCanvas.width = hoverboardRenderCanvas.width;
-hoverboardShieldCanvas.height = hoverboardRenderCanvas.height;
+hoverboardShieldCanvas.width = hoverboardRenderCanvas.width + HOVERBOARD_SHIELD_PADDING_X * 2;
+hoverboardShieldCanvas.height = hoverboardRenderCanvas.height + HOVERBOARD_SHIELD_PADDING_Y * 2;
 const hoverboardShieldCtx = hoverboardShieldCanvas.getContext('2d');
 let hoverboardLevel = 0;
 let hoverboardChangeTime = 0;
@@ -857,11 +860,11 @@ function drawHoverboard(boardWidth, boardColor) {
         ? 1 - hoverboardChangeTime / HOVERBOARD_CHANGE_DURATION
         : 1;
     const upgradePulse = Math.sin(changeProgress * Math.PI);
-    const changeScale = 1 + upgradePulse * 0.14;
+    const changeScale = 1 + upgradePulse * 0.08;
 
     ctx.save();
-    ctx.translate(0, -upgradePulse * 7);
-    ctx.scale(changeScale, 1 + upgradePulse * 0.08);
+    ctx.translate(0, -upgradePulse * 4);
+    ctx.scale(changeScale, 1 + upgradePulse * 0.035);
 
     if (layer) {
         // Build on an isolated canvas so sprite masking never affects the game scene.
@@ -889,36 +892,48 @@ function drawHoverboard(boardWidth, boardColor) {
         }
 
         ctx.save();
-        ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : boardColor;
-        ctx.shadowBlur = (powerupTimers.shield > 0 ? 24 : 14) + upgradePulse * 18;
+        ctx.shadowColor = boardColor;
+        ctx.shadowBlur = 14 + upgradePulse * 12;
         ctx.drawImage(hoverboardRenderCanvas, -boardWidth / 2, -boardHeight / 2, boardWidth, boardHeight);
         ctx.restore();
 
-        // A short board-shaped afterimage makes each level-up read as a clean materialize effect.
+        // A restrained board-shaped afterimage makes a level change readable without obscuring play.
         if (hoverboardChangeTime > 0) {
             ctx.save();
-            ctx.globalAlpha = upgradePulse * 0.24;
+            ctx.globalAlpha = upgradePulse * 0.16;
             ctx.shadowColor = boardColor;
-            ctx.shadowBlur = 20;
-            ctx.drawImage(hoverboardRenderCanvas, -boardWidth / 2, -boardHeight / 2 + upgradePulse * 12, boardWidth, boardHeight);
+            ctx.shadowBlur = 14;
+            ctx.drawImage(hoverboardRenderCanvas, -boardWidth / 2, -boardHeight / 2 + upgradePulse * 7, boardWidth, boardHeight);
             ctx.restore();
         }
 
         if (powerupTimers.shield > 0) {
-            // Use the complete sprite alpha mask, including empty Mana sections,
-            // so the shield follows the board's exact silhouette.
-            hoverboardShieldCtx.clearRect(0, 0, bufferW, bufferH);
+            // Build only the outside edge of the sprite alpha mask. The coloured and
+            // Mana portions of the board remain untouched and fully visible beneath it.
+            const shieldW = hoverboardShieldCanvas.width;
+            const shieldH = hoverboardShieldCanvas.height;
+            const shapeX = HOVERBOARD_SHIELD_PADDING_X;
+            const shapeY = HOVERBOARD_SHIELD_PADDING_Y;
+            hoverboardShieldCtx.clearRect(0, 0, shieldW, shieldH);
+            hoverboardShieldCtx.save();
+            for (const [offsetX, offsetY] of [[-6, 0], [6, 0], [0, -5], [0, 5], [-4, -4], [4, -4], [-4, 4], [4, 4]]) {
+                hoverboardShieldCtx.drawImage(layer.shape, shapeX + offsetX, shapeY + offsetY, bufferW, bufferH);
+            }
+            hoverboardShieldCtx.globalCompositeOperation = 'destination-out';
+            hoverboardShieldCtx.drawImage(layer.shape, shapeX, shapeY, bufferW, bufferH);
+            hoverboardShieldCtx.globalCompositeOperation = 'source-in';
             hoverboardShieldCtx.fillStyle = '#00ffd0';
-            hoverboardShieldCtx.fillRect(0, 0, bufferW, bufferH);
-            hoverboardShieldCtx.globalCompositeOperation = 'destination-in';
-            hoverboardShieldCtx.drawImage(layer.shape, 0, 0, bufferW, bufferH);
+            hoverboardShieldCtx.fillRect(0, 0, shieldW, shieldH);
             hoverboardShieldCtx.globalCompositeOperation = 'source-over';
+            hoverboardShieldCtx.restore();
 
             ctx.save();
-            ctx.globalAlpha = 0.46 + upgradePulse * 0.18;
+            ctx.globalAlpha = 0.9;
             ctx.shadowColor = '#00ffd0';
-            ctx.shadowBlur = 22;
-            ctx.drawImage(hoverboardShieldCanvas, -boardWidth / 2, -boardHeight / 2, boardWidth, boardHeight);
+            ctx.shadowBlur = 15;
+            const shieldDrawWidth = boardWidth * shieldW / bufferW;
+            const shieldDrawHeight = boardHeight * shieldH / bufferH;
+            ctx.drawImage(hoverboardShieldCanvas, -shieldDrawWidth / 2, -shieldDrawHeight / 2, shieldDrawWidth, shieldDrawHeight);
             ctx.restore();
         }
     } else {

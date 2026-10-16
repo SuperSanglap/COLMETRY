@@ -129,9 +129,30 @@
         window.syncPlayPauseIcon();
     });
 
+    function isFullscreen() {
+        return !!(document.fullscreenElement || document.webkitFullscreenElement);
+    }
+
+    // Browsers reserve Escape to leave fullscreen. When that happens before the
+    // keydown reaches the page, this still pauses the game and shows the menu.
+    function pauseAfterFullscreenExit() {
+        if (!isFullscreen() && !window._coloroidGameBlocked && !window.gameOver && !window.paused) {
+            openGameMenu();
+        }
+    }
+
+    document.addEventListener('fullscreenchange', pauseAfterFullscreenExit);
+    document.addEventListener('webkitfullscreenchange', pauseAfterFullscreenExit);
+
     document.addEventListener('keydown', (event) => {
         if (event.key !== 'Escape' || event.repeat || window._coloroidGameBlocked || window.gameOver) return;
         event.preventDefault();
+        // If the browser allows this event through while fullscreen, always keep
+        // the menu open; the subsequent fullscreen exit event becomes a no-op.
+        if (isFullscreen()) {
+            openGameMenu();
+            return;
+        }
         if (menu && menu.classList.contains('is-open')) closeGameMenu();
         else openGameMenu();
     });

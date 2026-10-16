@@ -1,8 +1,6 @@
 !!!! Hide the top elements in the game mode.
 
-paddle shapes and so
 The Magnet Issue
-powerup counter around the icons
 Better looking home-screen
 On-Mobile There will be caution of not-availablity but with ads
 Running Ads on Home-screen and Game Over Screen
