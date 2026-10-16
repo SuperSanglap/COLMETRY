@@ -283,7 +283,6 @@ const uiLives = document.getElementById('uiLives');
 const uiSpeed = document.getElementById('uiSpeed');
 const uiTimer = document.getElementById('uiTimer');
 const uiCurrDot = document.getElementById('uiCurrDot');
-const uiCurrName = document.getElementById('uiCurrName');
 const uiNextDot = document.getElementById('uiNextDot');
 const uiNextName = document.getElementById('uiNextName');
 const overlayEl = document.getElementById('overlay');
@@ -293,6 +292,92 @@ let paddleShrinkActive = false;
 let paddleShrinkTarget = 1;
 let paddleShrinkCurrent = 1;
 let paddleBounceAnim = 0;
+const HOVERBOARD_SCORE_STEP = 500;
+const HOVERBOARD_CHANGE_DURATION = 0.55;
+const HOVERBOARD_ASPECT = 1200 / 120;
+const HOVERBOARD_SOURCES = [
+    'SPRITES/RECT.png',
+    'SPRITES/TRAP.png',
+    'SPRITES/HEXE.png',
+    'SPRITES/OCTE.png',
+    'SPRITES/OCEL.png',
+    'SPRITES/AHED.png'
+];
+const hoverboardSprites = HOVERBOARD_SOURCES.map((src) => {
+    const image = new Image();
+    image.src = src;
+    return image;
+});
+const hoverboardLayers = new Array(HOVERBOARD_SOURCES.length);
+const hoverboardRenderCanvas = document.createElement('canvas');
+hoverboardRenderCanvas.width = 512;
+hoverboardRenderCanvas.height = Math.round(512 / HOVERBOARD_ASPECT);
+const hoverboardRenderCtx = hoverboardRenderCanvas.getContext('2d');
+const hoverboardShieldCanvas = document.createElement('canvas');
+hoverboardShieldCanvas.width = hoverboardRenderCanvas.width;
+hoverboardShieldCanvas.height = hoverboardRenderCanvas.height;
+const hoverboardShieldCtx = hoverboardShieldCanvas.getContext('2d');
+let hoverboardLevel = 0;
+let hoverboardChangeTime = 0;
+
+function createHoverboardLayers(image) {
+    const source = document.createElement('canvas');
+    source.width = image.naturalWidth;
+    source.height = image.naturalHeight;
+    const sourceCtx = source.getContext('2d', { willReadFrequently: true });
+    sourceCtx.drawImage(image, 0, 0);
+    const pixels = sourceCtx.getImageData(0, 0, source.width, source.height);
+    const darkPixels = new ImageData(source.width, source.height);
+    const lightPixels = new ImageData(source.width, source.height);
+    const shapePixels = new ImageData(source.width, source.height);
+
+    for (let i = 0; i < pixels.data.length; i += 4) {
+        const alpha = pixels.data[i + 3];
+        if (!alpha) continue;
+        const brightness = (pixels.data[i] + pixels.data[i + 1] + pixels.data[i + 2]) / 3;
+        const target = brightness < 128 ? darkPixels.data : lightPixels.data;
+        target[i] = 255;
+        target[i + 1] = 255;
+        target[i + 2] = 255;
+        target[i + 3] = alpha;
+        shapePixels.data[i] = 255;
+        shapePixels.data[i + 1] = 255;
+        shapePixels.data[i + 2] = 255;
+        shapePixels.data[i + 3] = alpha;
+    }
+
+    const dark = document.createElement('canvas');
+    dark.width = source.width;
+    dark.height = source.height;
+    dark.getContext('2d').putImageData(darkPixels, 0, 0);
+
+    const light = document.createElement('canvas');
+    light.width = source.width;
+    light.height = source.height;
+    light.getContext('2d').putImageData(lightPixels, 0, 0);
+
+    const shape = document.createElement('canvas');
+    shape.width = source.width;
+    shape.height = source.height;
+    shape.getContext('2d').putImageData(shapePixels, 0, 0);
+    return { dark, light, shape, width: source.width, height: source.height };
+}
+
+hoverboardSprites.forEach((image, index) => {
+    const prepareLayers = () => { hoverboardLayers[index] = createHoverboardLayers(image); };
+    if (image.complete && image.naturalWidth) prepareLayers();
+    else image.addEventListener('load', prepareLayers, { once: true });
+});
+
+function updateHoverboardLevel(dt) {
+    const nextLevel = Math.min(hoverboardSprites.length - 1, Math.floor(score / HOVERBOARD_SCORE_STEP));
+    if (nextLevel !== hoverboardLevel) {
+        hoverboardLevel = nextLevel;
+        hoverboardChangeTime = HOVERBOARD_CHANGE_DURATION;
+    }
+    if (hoverboardChangeTime > 0) hoverboardChangeTime = Math.max(0, hoverboardChangeTime - dt);
+}
+
 function getPaddleWidth() {
     const baseW = getPaddleConfig().w;
     return baseW * paddleShrinkCurrent;
@@ -336,6 +421,9 @@ canvas.addEventListener('pointerup', ev => {
             paddleBounceAnim = 18; // frames for bounce
         }
     }
+});
+canvas.addEventListener('contextmenu', ev => {
+    if (!paused && !gameOver && !window._coloroidGameBlocked) ev.preventDefault();
 });
 function clamp(n, a, b) { return Math.max(a, Math.min(b, n)); }
 function randRange(a, b) { return Math.random() * (b - a) + a; }
@@ -681,6 +769,10 @@ function update(dt, now) {
 
 function endGame() {
     gameOver = true; paused = true;
+    window.gameOver = true;
+    window.paused = true;
+    const menuButton = document.getElementById('btnMenu');
+    if (menuButton) menuButton.style.display = 'none';
     overlayEl.classList.add('show');
     document.getElementById('overlayText').textContent = `Game Over — Score ${score}`;
     // Reveal footer credit on game over / overlay
@@ -702,9 +794,10 @@ function restart() {
     // Remove any UI indicators for active powerups
     try {
         document.body.classList.remove('powerup-active');
-        var pShield = document.getElementById('pwrShield'); if (pShield) pShield.style.opacity = 0.4;
-        var pClock = document.getElementById('pwrClock'); if (pClock) pClock.style.opacity = 0.4;
-        var pMag = document.getElementById('pwrMagnet'); if (pMag) pMag.style.opacity = 0.4;
+        var pShield = document.getElementById('pwrShield'); if (pShield) pShield.hidden = true;
+        var pClock = document.getElementById('pwrClock'); if (pClock) pClock.hidden = true;
+        var pMag = document.getElementById('pwrMagnet'); if (pMag) pMag.hidden = true;
+        var powerupBar = document.getElementById('powerupBar'); if (powerupBar) powerupBar.hidden = true;
     } catch (e) {}
     // Reset powerup spawn gating so new session can spawn powerups normally
     try { canSpawnPowerup = true; lastPowerupSpawn = performance.now() - POWERUP_MIN_SPAWN_DELAY * 1000; lastPowerupType = null; } catch(e){}
@@ -716,12 +809,18 @@ function restart() {
     elapsed = 0;
     paused = false;
     gameOver = false;
+    window.paused = false;
+    window.gameOver = false;
+    const menuButton = document.getElementById('btnMenu');
+    if (menuButton) menuButton.style.display = 'grid';
     overlayEl.classList.remove('show');
     resetPaddle();
     paddleShrinkActive = false;
     paddleShrinkTarget = 1;
     paddleShrinkCurrent = 1;
     paddleBounceAnim = 0;
+    hoverboardLevel = 0;
+    hoverboardChangeTime = 0;
     updateManaBar();
     // Hide mouse pointer on restart
     const gameCanvas = document.getElementById('game');
@@ -750,6 +849,86 @@ function togglePause() {
 }
 
 // ==== RENDER DRAWING ====
+
+function drawHoverboard(boardWidth, boardColor) {
+    const boardHeight = Math.max(26, boardWidth / HOVERBOARD_ASPECT);
+    const layer = hoverboardLayers[hoverboardLevel];
+    const changeProgress = hoverboardChangeTime > 0
+        ? 1 - hoverboardChangeTime / HOVERBOARD_CHANGE_DURATION
+        : 1;
+    const upgradePulse = Math.sin(changeProgress * Math.PI);
+    const changeScale = 1 + upgradePulse * 0.14;
+
+    ctx.save();
+    ctx.translate(0, -upgradePulse * 7);
+    ctx.scale(changeScale, 1 + upgradePulse * 0.08);
+
+    if (layer) {
+        // Build on an isolated canvas so sprite masking never affects the game scene.
+        const bufferW = hoverboardRenderCanvas.width;
+        const bufferH = hoverboardRenderCanvas.height;
+        hoverboardRenderCtx.clearRect(0, 0, bufferW, bufferH);
+
+        // Dark source pixels become the live active color.
+        hoverboardRenderCtx.fillStyle = boardColor;
+        hoverboardRenderCtx.fillRect(0, 0, bufferW, bufferH);
+        hoverboardRenderCtx.globalCompositeOperation = 'destination-in';
+        hoverboardRenderCtx.drawImage(layer.dark, 0, 0, bufferW, bufferH);
+        hoverboardRenderCtx.globalCompositeOperation = 'source-over';
+
+        // White source pixels form a Mana meter, expanding evenly from the board centre.
+        const manaRatio = Math.max(0, Math.min(1, mana / maxMana));
+        const fillWidth = bufferW * manaRatio;
+        if (fillWidth > 0) {
+            hoverboardRenderCtx.save();
+            hoverboardRenderCtx.beginPath();
+            hoverboardRenderCtx.rect((bufferW - fillWidth) / 2, 0, fillWidth, bufferH);
+            hoverboardRenderCtx.clip();
+            hoverboardRenderCtx.drawImage(layer.light, 0, 0, bufferW, bufferH);
+            hoverboardRenderCtx.restore();
+        }
+
+        ctx.save();
+        ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : boardColor;
+        ctx.shadowBlur = (powerupTimers.shield > 0 ? 24 : 14) + upgradePulse * 18;
+        ctx.drawImage(hoverboardRenderCanvas, -boardWidth / 2, -boardHeight / 2, boardWidth, boardHeight);
+        ctx.restore();
+
+        // A short board-shaped afterimage makes each level-up read as a clean materialize effect.
+        if (hoverboardChangeTime > 0) {
+            ctx.save();
+            ctx.globalAlpha = upgradePulse * 0.24;
+            ctx.shadowColor = boardColor;
+            ctx.shadowBlur = 20;
+            ctx.drawImage(hoverboardRenderCanvas, -boardWidth / 2, -boardHeight / 2 + upgradePulse * 12, boardWidth, boardHeight);
+            ctx.restore();
+        }
+
+        if (powerupTimers.shield > 0) {
+            // Use the complete sprite alpha mask, including empty Mana sections,
+            // so the shield follows the board's exact silhouette.
+            hoverboardShieldCtx.clearRect(0, 0, bufferW, bufferH);
+            hoverboardShieldCtx.fillStyle = '#00ffd0';
+            hoverboardShieldCtx.fillRect(0, 0, bufferW, bufferH);
+            hoverboardShieldCtx.globalCompositeOperation = 'destination-in';
+            hoverboardShieldCtx.drawImage(layer.shape, 0, 0, bufferW, bufferH);
+            hoverboardShieldCtx.globalCompositeOperation = 'source-over';
+
+            ctx.save();
+            ctx.globalAlpha = 0.46 + upgradePulse * 0.18;
+            ctx.shadowColor = '#00ffd0';
+            ctx.shadowBlur = 22;
+            ctx.drawImage(hoverboardShieldCanvas, -boardWidth / 2, -boardHeight / 2, boardWidth, boardHeight);
+            ctx.restore();
+        }
+    } else {
+        // Keep the paddle playable while the sprite images are loading.
+        ctx.fillStyle = boardColor;
+        ctx.fillRect(-boardWidth / 2, -boardHeight * 0.18, boardWidth, boardHeight * 0.36);
+    }
+
+    ctx.restore();
+}
 
 function draw(now) {
     ctx.clearRect(0, 0, W, H);
@@ -850,26 +1029,8 @@ function draw(now) {
         bounceScale = 1 + Math.sin((18 - paddleBounceAnim) / 18 * Math.PI) * 0.22;
         paddleBounceAnim--;
     }
-    let paddleW = getPaddleWidth() * bounceScale;
-    let slimH = getPaddleConfig().h * bounceScale * 0.65;
-    ctx.fillStyle = padColor;
-    ctx.shadowColor = powerupTimers.shield > 0 ? '#00ffd0' : padColor;
-    ctx.shadowBlur = 16 + (powerupTimers.shield > 0 ? 10 : 0);
-
-    // Always draw paddle as a rectangle
-    ctx.fillRect(-paddleW / 2, -slimH / 2, paddleW, slimH);
-
-    if (powerupTimers.shield > 0) {
-        ctx.save();
-        ctx.globalAlpha = 0.7;
-        ctx.strokeStyle = '#00ffd0'; ctx.lineWidth = 3;
-        ctx.strokeRect(-paddleW / 2 - 3, -slimH / 2 - 2, paddleW + 6, slimH + 4);
-        ctx.restore();
-    }
-    ctx.lineWidth = 2;
-    ctx.globalAlpha = 1;
-    ctx.strokeStyle = "#fff6";
-    ctx.strokeRect(-paddleW / 2 + 1, -slimH / 2 + 1, paddleW - 2, slimH - 2);
+    const paddleW = getPaddleWidth() * bounceScale;
+    drawHoverboard(paddleW, padColor);
     ctx.restore();
 
     if (pulse > 0) pulse -= 16;
@@ -886,9 +1047,23 @@ function draw(now) {
         s.className = 'heart-ui' + (i < lives ? '' : ' dim');
         uiLives.appendChild(s);
     }
-    if (document.getElementById('pwrShield')) document.getElementById('pwrShield').style.opacity = powerupTimers.shield > 0 ? 1 : 0.4;
-    if (document.getElementById('pwrClock')) document.getElementById('pwrClock').style.opacity = powerupTimers.clock > 0 ? 1 : 0.4;
-    if (document.getElementById('pwrMagnet')) document.getElementById('pwrMagnet').style.opacity = powerupTimers.magnet > 0 ? 1 : 0.4;
+    const powerupUi = [
+        { type: 'shield', label: 'Shield', element: document.getElementById('pwrShield') },
+        { type: 'clock', label: 'Slow', element: document.getElementById('pwrClock') },
+        { type: 'magnet', label: 'Magnet', element: document.getElementById('pwrMagnet') }
+    ];
+    const activePowerup = powerupUi.some(({ type }) => powerupTimers[type] > 0);
+    for (const { type, label, element } of powerupUi) {
+        if (!element) continue;
+        const remaining = Math.max(0, powerupTimers[type]);
+        element.hidden = remaining <= 0;
+        if (remaining > 0) {
+            element.style.setProperty('--powerup-angle', `${(remaining / POWERUP_DURATION_SEC) * 360}deg`);
+            element.setAttribute('aria-label', `${label} active: ${Math.ceil(remaining)} seconds remaining`);
+        }
+    }
+    const powerupBar = document.getElementById('powerupBar');
+    if (powerupBar) powerupBar.hidden = !activePowerup;
 
     if (mouseInGame) {
         ctx.save();
@@ -1068,28 +1243,7 @@ if (!window._coloroidGameBlocked) {
 
 let mana = 0;
 const maxMana = 200;
-let manaBarEl = null;
-
-window.addEventListener('DOMContentLoaded', function() {
-    // Add mana bar to HUD (top left, below health, above powerups)
-    manaBarEl = document.createElement('div');
-    manaBarEl.id = 'manaBar';
-    manaBarEl.style.position = 'absolute';
-    manaBarEl.style.left = '18px';
-    manaBarEl.style.top = '54px';
-    manaBarEl.style.width = '120px';
-    manaBarEl.style.height = '16px';
-    manaBarEl.style.background = '#222';
-    manaBarEl.style.border = '2px solid #00ffd0';
-    manaBarEl.style.borderRadius = '3px';
-    manaBarEl.style.boxShadow = '0 2px 8px #00ffd0, 0 0 12px #00ffd0cc inset';
-    manaBarEl.style.zIndex = '20';
-    manaBarEl.innerHTML = '<div id="manaBarFill" style="height:100%;width:100%;background:linear-gradient(90deg,#00ffd0 60%,#00bfff 100%);border-radius:2px;box-shadow:0 0 16px #00ffd0cc,0 0 8px #00ffd0 inset;transition:width 0.2s"></div>';
-    // Place in HUD left
-    const hudLeft = document.querySelector('.hud-left');
-    if (hudLeft) hudLeft.appendChild(manaBarEl);
-    else document.body.appendChild(manaBarEl);
-});
+let manaBarEl = document.getElementById('manaBar');
 
 function updateManaBar() {
     if (!manaBarEl) return;
@@ -1236,6 +1390,7 @@ function update(dt, now) {
 
     score = Math.max(0, score);
     lives = Math.max(0, Math.min(MAX_LIVES, lives));
+    updateHoverboardLevel(dt);
     if (lives <= 0 && !gameOver) { endGame(); }
 }
 

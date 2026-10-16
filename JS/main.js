@@ -1,99 +1,140 @@
-// Overlay Home button event
-document.getElementById('btnOverlayHome').addEventListener('click', () => {
-    window.location.reload();
-});
-document.getElementById('btnPause').addEventListener('click', () => {
-    if (window.togglePause) window.togglePause();
-    syncPlayPauseIcon();
-});
+// Gameplay menu and audio controls. The game engine itself remains in script.js.
+(function () {
+    const byId = (id) => document.getElementById(id);
+    const menuButton = byId('btnMenu');
+    const menu = byId('pauseMenu');
+    const menuScrim = byId('menuScrim');
+    const resumeButton = byId('menuResume');
+    const restartButton = byId('menuRestart');
+    const homeButton = byId('menuHome');
+    const creditsButton = byId('menuCredits');
+    const creditsPanel = byId('menuCreditsPanel');
+    const musicButton = byId('menuMusic');
+    const musicLabel = byId('menuMusicLabel');
+    const musicIcon = byId('iconMusic');
+    const bgm = byId('bgm');
 
-window.syncPlayPauseIcon = function syncPlayPauseIcon() {
-    const faPause = document.getElementById('faPause');
-    const faPlay = document.getElementById('faPlay');
-    if (window.paused) {
-        if (faPause) faPause.style.display = 'none';
-        if (faPlay) faPlay.style.display = 'inline-block';
-    } else {
-        if (faPause) faPause.style.display = 'inline-block';
-        if (faPlay) faPlay.style.display = 'none';
-    }
-};
-document.getElementById('btnRetry').addEventListener('click', () => {
-    if (window.restart) window.restart();
-    // Animate retry icon
-    const iconRetry = document.getElementById('iconRetry');
-    if (iconRetry) {
-        iconRetry.style.transform = 'rotate(-360deg)';
-        iconRetry.style.transition = 'transform 0.4s';
-        setTimeout(() => {
-            iconRetry.style.transform = '';
-            iconRetry.style.transition = '';
-        }, 400);
-    }
-    // Ensure play/pause icon is in sync after restart
-    if (typeof syncPlayPauseIcon === 'function') syncPlayPauseIcon();
-});
-document.getElementById('btnOverlayRestart').addEventListener('click', () => {
-    if (window.restart) window.restart();
-    if (typeof syncPlayPauseIcon === 'function') syncPlayPauseIcon();
-});
+    window._bgmUserOn = !!window._bgmUserOn;
 
-const bgm = document.getElementById('bgm');
-// Use a single global flag for music preference
-window._bgmUserOn = !!window._bgmUserOn;
-document.getElementById('btnMusic').addEventListener('click', () => {
-    if (!bgm || !bgm.src) {
-        alert('No music source set. Add a file URL to the <audio> element src attribute in the code to enable music.');
-        return;
-    }
-    const iconMusic = document.getElementById('iconMusic');
-    if (!window._bgmUserOn) {
-        bgm.play().then(function(){
-            window._bgmUserOn = true;
-            if (iconMusic) { iconMusic.classList.remove('fa-volume-xmark','fa-volume-off'); iconMusic.classList.add('fa-volume-high'); }
-        }).catch(function(err){
-            console.warn('BGM play blocked or failed', err);
-            window._bgmUserOn = false;
-            if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-xmark'); }
-        });
-    } else {
-        try { bgm.pause(); } catch(e){}
-        window._bgmUserOn = false;
-        if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
-    }
-});
-
-// If the engine exposes togglePause later, wrap it so BGM respects pause state
-function wrapTogglePause(){
-    try{
-        if (typeof window.togglePause === 'function' && !window._togglePauseWrapped){
-            var orig = window.togglePause;
-            window.togglePause = function(){
-                var res = orig.apply(this, arguments);
-                // If music is user-enabled, pause/resume with the game
-                try{
-                    if (window._bgmUserOn && bgm) {
-                        if (window.paused) {
-                            try { bgm.pause(); } catch(e){}
-                        } else {
-                            bgm.play().then(function(){
-                                // no-op, play succeeded
-                            }).catch(function(err){
-                                console.warn('BGM play blocked or failed in togglePause wrapper', err);
-                                window._bgmUserOn = false;
-                                var iconMusic = document.getElementById('iconMusic'); if (iconMusic) { iconMusic.classList.remove('fa-volume-high'); iconMusic.classList.add('fa-volume-off'); }
-                            });
-                        }
-                    }
-                }catch(e){}
-                return res;
-            };
-            window._togglePauseWrapped = true;
-            return true;
+    function syncMusicControl() {
+        const isOn = !!window._bgmUserOn;
+        if (musicLabel) musicLabel.textContent = `Music: ${isOn ? 'On' : 'Off'}`;
+        if (musicIcon) {
+            musicIcon.classList.toggle('fa-volume-high', isOn);
+            musicIcon.classList.toggle('fa-volume-xmark', !isOn);
+            musicIcon.classList.remove('fa-volume-off');
         }
-    }catch(e){}
-    return false;
-}
-if (!wrapTogglePause()){
-    var tpCheck = setInterval(function(){ if (wrapTogglePause()){ clearInterval(tpCheck); } }, 120);
-}
+    }
+
+    function setMenuOpen(isOpen) {
+        if (!menu || !menuScrim || !menuButton) return;
+        menu.classList.toggle('is-open', isOpen);
+        menuScrim.classList.toggle('is-open', isOpen);
+        menu.setAttribute('aria-hidden', String(!isOpen));
+        menuScrim.setAttribute('aria-hidden', String(!isOpen));
+        menuButton.setAttribute('aria-expanded', String(isOpen));
+        menuButton.setAttribute('aria-label', isOpen ? 'Game menu open' : 'Open game menu');
+    }
+
+    function openGameMenu() {
+        if (window.gameOver) return;
+        if (!window.paused && typeof window.togglePause === 'function') window.togglePause();
+        setMenuOpen(true);
+    }
+
+    function closeGameMenu() {
+        setMenuOpen(false);
+        if (window.paused && !window.gameOver && typeof window.togglePause === 'function') window.togglePause();
+    }
+
+    window.syncPlayPauseIcon = function syncPlayPauseIcon() {
+        if (menuButton) menuButton.classList.toggle('is-paused', !!window.paused);
+        syncMusicControl();
+    };
+
+    function toggleMusic() {
+        if (!bgm || !bgm.src) return;
+        if (window._bgmUserOn) {
+            window._bgmUserOn = false;
+            try { bgm.pause(); } catch (e) { /* ignored */ }
+            syncMusicControl();
+            return;
+        }
+
+        // Remember the preference while paused; playback resumes with the game.
+        if (window.paused) {
+            window._bgmUserOn = true;
+            syncMusicControl();
+            return;
+        }
+
+        bgm.play().then(() => {
+            window._bgmUserOn = true;
+            syncMusicControl();
+        }).catch(() => {
+            window._bgmUserOn = false;
+            syncMusicControl();
+        });
+    }
+
+    if (bgm) {
+        bgm.addEventListener('play', () => {
+            window._bgmUserOn = true;
+            syncMusicControl();
+        });
+    }
+
+    // Keep the existing pause behavior, adding only music and menu-state handling.
+    if (typeof window.togglePause === 'function' && !window._togglePauseWrapped) {
+        const engineTogglePause = window.togglePause;
+        window.togglePause = function () {
+            const result = engineTogglePause.apply(this, arguments);
+            if (bgm && window._bgmUserOn) {
+                if (window.paused) {
+                    try { bgm.pause(); } catch (e) { /* ignored */ }
+                } else {
+                    bgm.play().catch(() => {
+                        window._bgmUserOn = false;
+                        syncMusicControl();
+                    });
+                }
+            }
+            window.syncPlayPauseIcon();
+            return result;
+        };
+        window._togglePauseWrapped = true;
+    }
+
+    if (menuButton) menuButton.addEventListener('click', openGameMenu);
+    if (resumeButton) resumeButton.addEventListener('click', closeGameMenu);
+    if (menuScrim) menuScrim.addEventListener('click', closeGameMenu);
+    if (restartButton) restartButton.addEventListener('click', () => {
+        setMenuOpen(false);
+        if (typeof window.restart === 'function') window.restart();
+        window.syncPlayPauseIcon();
+    });
+    if (homeButton) homeButton.addEventListener('click', () => window.location.reload());
+    if (creditsButton) creditsButton.addEventListener('click', () => {
+        const willShow = creditsPanel && creditsPanel.hidden;
+        if (creditsPanel) creditsPanel.hidden = !willShow;
+        creditsButton.setAttribute('aria-expanded', String(!!willShow));
+    });
+    if (musicButton) musicButton.addEventListener('click', toggleMusic);
+
+    const overlayHome = byId('btnOverlayHome');
+    if (overlayHome) overlayHome.addEventListener('click', () => window.location.reload());
+    const overlayRestart = byId('btnOverlayRestart');
+    if (overlayRestart) overlayRestart.addEventListener('click', () => {
+        if (typeof window.restart === 'function') window.restart();
+        window.syncPlayPauseIcon();
+    });
+
+    document.addEventListener('keydown', (event) => {
+        if (event.key !== 'Escape' || event.repeat || window._coloroidGameBlocked || window.gameOver) return;
+        event.preventDefault();
+        if (menu && menu.classList.contains('is-open')) closeGameMenu();
+        else openGameMenu();
+    });
+
+    syncMusicControl();
+}());

@@ -572,3 +572,464 @@ body.full-mana #manaBarFill { box-shadow: 0 0 30px rgba(122,67,255,0.25), inset 
 #game {
     cursor: none;
 }
+
+/* Gameplay HUD — the menu is the sole control visible during play. */
+.menu-toggle {
+    position: fixed;
+    top: 18px;
+    left: 18px;
+    z-index: 30;
+    width: 48px;
+    height: 48px;
+    display: grid;
+    place-items: center;
+    padding: 0;
+    border: 1px solid rgba(178, 232, 255, 0.22);
+    border-radius: 14px;
+    background: rgba(7, 16, 26, 0.82);
+    color: var(--ink);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), inset 0 1px rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    cursor: pointer;
+    transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus-visible {
+    transform: translateY(-2px);
+    background: rgba(19, 44, 64, 0.95);
+    box-shadow: 0 14px 34px rgba(39, 188, 255, 0.18);
+}
+
+.menu-toggle i { font-size: 19px; }
+
+.menu-scrim {
+    position: fixed;
+    inset: 0;
+    z-index: 34;
+    display: none;
+    background: rgba(0, 4, 10, 0.48);
+    backdrop-filter: blur(2px);
+}
+
+.pause-menu {
+    position: fixed;
+    z-index: 35;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    width: min(340px, calc(100vw - 38px));
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    padding: 112px 22px 24px;
+    color: var(--ink);
+    background: linear-gradient(155deg, rgba(13, 30, 45, 0.98), rgba(4, 10, 18, 0.99));
+    border-right: 1px solid rgba(126, 242, 255, 0.18);
+    box-shadow: 18px 0 52px rgba(0, 0, 0, 0.42);
+    transform: translateX(-105%);
+    transition: transform 240ms cubic-bezier(.2, .8, .2, 1);
+}
+
+.pause-menu.is-open { transform: translateX(0); }
+.menu-scrim.is-open { display: block; }
+
+.pause-menu__header {
+    display: grid;
+    gap: 5px;
+    margin: 0 8px 28px;
+}
+
+.pause-menu__eyebrow {
+    color: #75dfff;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.17em;
+}
+
+.pause-menu__title {
+    font-size: 26px;
+    font-weight: 900;
+    letter-spacing: 0.08em;
+}
+
+.pause-menu__actions { display: grid; gap: 8px; }
+
+.pause-menu__actions button {
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    width: 100%;
+    padding: 0 14px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    transition: background 150ms ease, border-color 150ms ease, transform 150ms ease;
+}
+
+.pause-menu__actions button:hover,
+.pause-menu__actions button:focus-visible {
+    transform: translateX(3px);
+    border-color: rgba(126, 242, 255, 0.2);
+    background: rgba(126, 242, 255, 0.09);
+}
+
+.pause-menu__actions button i { width: 18px; text-align: center; color: #7ef2ff; }
+
+.pause-menu__credits {
+    margin: -1px 6px 5px;
+    padding: 10px 12px;
+    border-left: 2px solid rgba(126, 242, 255, 0.6);
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.pause-menu__credits span { color: var(--heart); }
+.pause-menu__credits a { color: #bcefff; font-weight: 700; }
+
+.hud-layer {
+    position: fixed;
+    inset: 0;
+    z-index: 20;
+    pointer-events: none;
+}
+
+.hud-status {
+    position: fixed;
+    top: 18px;
+    right: 18px;
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+}
+
+.hud-stat,
+.score-chip,
+.powerup-bar {
+    border: 1px solid rgba(176, 226, 255, 0.14);
+    background: linear-gradient(150deg, rgba(13, 28, 42, 0.88), rgba(4, 10, 17, 0.91));
+    box-shadow: 0 8px 26px rgba(0, 0, 0, 0.25), inset 0 1px rgba(255, 255, 255, 0.06);
+    backdrop-filter: blur(10px);
+}
+
+.hud-stat {
+    min-height: 48px;
+    box-sizing: border-box;
+    display: grid;
+    align-content: center;
+    gap: 6px;
+    padding: 8px 11px;
+    border-radius: 12px;
+}
+
+.hud-stat__label,
+.score-chip__label {
+    color: #9ab0c6;
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.1em;
+    line-height: 1;
+    text-transform: uppercase;
+}
+
+.hud-stat__heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+}
+
+.hud-stat__value,
+.hud-timer {
+    color: #85efff;
+    font-size: 12px;
+    font-weight: 800;
+}
+
+.hud-health { min-width: 108px; }
+.hud-health .hearts { gap: 4px; min-height: 18px; }
+.heart-ui { width: 18px; height: 18px; margin-right: 0; }
+
+.hud-precision { min-width: 130px; }
+#manaBar {
+    position: static;
+    width: 118px;
+    height: 6px;
+    box-sizing: border-box;
+    overflow: hidden;
+    padding: 0;
+    border: 0;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
+    box-shadow: none;
+}
+
+#manaBarFill {
+    min-width: 0;
+    border-radius: inherit;
+    background: linear-gradient(90deg, #00ffd0 0%, #00bfff 70%, #7a43ff 100%);
+    box-shadow: 0 0 13px rgba(0, 255, 208, 0.52);
+}
+
+.hud-color-shift { min-width: 145px; }
+.hud-color-shift__value { display: flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 800; }
+.hud-color-shift .dot { width: 15px; height: 15px; flex: 0 0 auto; }
+.hud-timer { margin-left: auto; }
+
+.hud-bottom-right {
+    position: fixed;
+    right: 18px;
+    bottom: 18px;
+    display: grid;
+    justify-items: end;
+    gap: 9px;
+}
+
+.score-chip {
+    min-width: 116px;
+    display: grid;
+    gap: 4px;
+    padding: 10px 13px;
+    border-radius: 12px;
+    text-align: right;
+}
+
+#uiScore { font-size: 25px; font-weight: 900; line-height: 1; letter-spacing: 0.02em; }
+
+.powerup-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 6px;
+    max-width: 280px;
+    padding: 7px;
+    border-radius: 12px;
+}
+
+.powerup-bar[hidden],
+.powerup-bar span[hidden] { display: none; }
+
+.powerup-bar span {
+    display: inline-flex;
+    align-items: center;
+    min-height: 27px;
+    padding: 0 9px;
+    border: 1px solid rgba(255, 235, 140, 0.24);
+    border-radius: 7px;
+    background: rgba(255, 218, 91, 0.1);
+    color: #fff2b2;
+    font-size: 11px;
+    font-weight: 800;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    box-shadow: 0 0 14px rgba(255, 218, 91, 0.1);
+}
+
+/* Override the original icon-strip rules; inactive power-ups leave no footprint. */
+#powerupBar.powerup-bar { margin: 0; }
+#powerupBar.powerup-bar span {
+    width: auto;
+    height: auto;
+    margin: 0;
+    opacity: 1;
+    line-height: 1;
+}
+
+@media (max-width: 720px) {
+    .hud-status { right: 10px; top: 10px; gap: 5px; }
+    .hud-stat { padding: 7px 8px; }
+    .hud-health { min-width: 83px; }
+    .hud-precision { min-width: 100px; }
+    #manaBar { width: 88px; }
+    .hud-color-shift { min-width: 112px; }
+    .hud-color-shift__value { gap: 4px; font-size: 11px; }
+    .hud-bottom-right { right: 10px; bottom: 10px; }
+    .menu-toggle { top: 10px; left: 10px; }
+}
+
+/* Compact in-game HUD: values and icons only. */
+.menu-toggle {
+    top: 14px;
+    left: 14px;
+    width: 34px;
+    height: 34px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    color: rgba(232, 241, 255, 0.8);
+}
+
+.menu-toggle:hover,
+.menu-toggle:focus-visible {
+    transform: none;
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: none;
+    color: #fff;
+}
+
+.menu-toggle i { font-size: 16px; }
+
+.hud-status {
+    top: 15px;
+    right: 17px;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 9px;
+}
+
+.hud-stat,
+.score-chip,
+.powerup-bar {
+    min-height: 0;
+    min-width: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+}
+
+.hud-stat { display: flex; align-items: center; }
+.hud-stat__label,
+.hud-stat__heading,
+.hud-stat__value,
+.score-chip__label { display: none; }
+
+.hud-health .hearts { min-height: 0; gap: 4px; }
+.heart-ui { width: 16px; height: 16px; }
+
+.hud-precision { min-width: 0; }
+#manaBar {
+    width: 78px;
+    height: 4px;
+    background: rgba(220, 245, 255, 0.25);
+}
+
+#manaBarFill { box-shadow: 0 0 9px rgba(0, 255, 208, 0.6); }
+
+.hud-color-shift { min-width: 0; }
+.hud-color-shift__value { gap: 6px; font-size: 0; }
+.hud-color-shift .dot { width: 14px; height: 14px; }
+.hud-timer {
+    margin-left: 0;
+    color: rgba(232, 241, 255, 0.92);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+}
+
+.hud-bottom-right {
+    right: 17px;
+    bottom: 16px;
+    gap: 12px;
+}
+
+.score-chip { display: block; text-align: right; }
+#uiScore {
+    color: rgba(232, 241, 255, 0.96);
+    font-size: 24px;
+    font-weight: 800;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.55);
+}
+
+#powerupBar.powerup-bar {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 10px;
+    max-width: none;
+    margin: 0;
+}
+
+#powerupBar.powerup-bar span {
+    display: inline-grid;
+    width: 21px;
+    height: 21px;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    color: #fff0a5;
+    font-size: 0;
+    line-height: 1;
+    box-shadow: none;
+    opacity: 1;
+}
+
+#powerupBar.powerup-bar span i {
+    place-self: center;
+    font-size: 20px;
+    filter: drop-shadow(0 0 6px rgba(255, 223, 108, 0.68));
+}
+
+@media (max-width: 720px) {
+    .hud-status { top: 11px; right: 12px; gap: 7px; }
+    .hud-bottom-right { right: 12px; bottom: 12px; gap: 9px; }
+    .menu-toggle { top: 9px; left: 9px; }
+}
+
+/* Active power-ups: icon-only status with a live duration ring. */
+#powerupBar.powerup-bar[hidden],
+#powerupBar.powerup-bar span[hidden] { display: none !important; }
+
+#powerupBar.powerup-bar .powerup-icon {
+    --powerup-angle: 0deg;
+    --powerup-color: #fff0a5;
+    position: relative;
+    width: 24px;
+    height: 24px;
+    overflow: visible;
+    color: var(--powerup-color);
+    display: grid !important;
+    place-items: center;
+    isolation: isolate;
+}
+
+#powerupBar.powerup-bar .powerup-icon::before {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border-radius: 50%;
+    background: conic-gradient(from -90deg, var(--powerup-color) 0deg var(--powerup-angle), rgba(255, 255, 255, 0.16) var(--powerup-angle) 360deg);
+    -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+    mask: radial-gradient(farthest-side, transparent calc(100% - 2px), #000 calc(100% - 1px));
+    filter: drop-shadow(0 0 3px color-mix(in srgb, var(--powerup-color) 65%, transparent));
+}
+
+#powerupBar.powerup-bar .powerup-icon i,
+#powerupBar.powerup-bar .powerup-icon svg {
+    display: grid !important;
+    width: 24px;
+    height: 24px;
+    place-items: center;
+    position: relative;
+    z-index: 1;
+    visibility: visible;
+    opacity: 1;
+    color: var(--powerup-color);
+    font-size: 19px !important;
+    line-height: 1;
+    filter: drop-shadow(0 0 5px currentColor);
+}
+
+#powerupBar.powerup-bar .powerup-icon svg {
+    display: block !important;
+    width: 20px !important;
+    height: 20px !important;
+    fill: currentColor;
+}
+
+#powerupBar .powerup-icon--shield { --powerup-color: #62f4d2; }
+#powerupBar .powerup-icon--slow { --powerup-color: #87c9ff; }
+#powerupBar .powerup-icon--magnet { --powerup-color: #ff90cf; }

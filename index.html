@@ -69,40 +69,46 @@
     <div class="game-container">
         <canvas id="game"></canvas>
 
-        <div class="hud-layer">
-            <div class="hud-left">
-                <div class="chip"><span id="uiScore">0</span> <span class="small">Score</span></div>
-                <div class="chip hearts" id="uiLives"></div>
+        <button class="menu-toggle" id="btnMenu" type="button" aria-label="Open game menu" aria-controls="pauseMenu" aria-expanded="false">
+            <i class="fa-solid fa-bars" aria-hidden="true"></i>
+        </button>
+
+        <div class="menu-scrim" id="menuScrim" aria-hidden="true"></div>
+        <aside class="pause-menu" id="pauseMenu" aria-label="Paused game menu" aria-hidden="true">
+            <div class="pause-menu__header">
+                <span class="pause-menu__eyebrow">GAME PAUSED</span>
+                <span class="pause-menu__title">COLMETRY</span>
             </div>
-            <div class="hud-right">
-                <div class="chip">
-                    <span class="dot" id="uiCurrDot"></span>
-                    <span id="uiCurrName"></span>
+            <nav class="pause-menu__actions" aria-label="Game menu actions">
+                <button id="menuResume" type="button"><i class="fa-solid fa-play" aria-hidden="true"></i> Resume</button>
+                <button id="menuRestart" type="button"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Restart</button>
+                <button id="menuHome" type="button"><i class="fa-solid fa-house" aria-hidden="true"></i> Main menu</button>
+                <button id="menuCredits" type="button" aria-expanded="false"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Credits</button>
+                <div class="pause-menu__credits" id="menuCreditsPanel" hidden>
+                    Made with <span aria-hidden="true">♥</span> by <a href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">ZZeoN</a>
                 </div>
-                <div class="chip"><span id="uiTimer"></span> <span class="small">Swap</span></div>
-            </div>
-        </div>
+                <button id="menuMusic" type="button"><i id="iconMusic" class="fa-solid fa-volume-xmark" aria-hidden="true"></i> <span id="menuMusicLabel">Music: Off</span></button>
+            </nav>
+        </aside>
 
-        <div class="hud-layer" style="top:84px">
-            <div class="chip" id="powerupBar">
-                <span id="pwrShield" title="Shield Powerup">🛡️</span>
-                <span id="pwrClock" title="Clock Powerup">⏰</span>
-                <span id="pwrMagnet" title="Magnet Powerup">🧲</span>
-            </div>
-        </div>
+        <div class="hud-layer">
+            <section class="hud-status" aria-label="Game status">
+                <div class="hud-stat hud-health">
+                    <div class="hearts" id="uiLives" aria-label="Lives remaining"></div>
+                </div>
+                <div class="hud-stat hud-color-shift">
+                    <div class="hud-color-shift__value" aria-label="Active color and time until color shift"><span class="dot" id="uiCurrDot"></span><span class="hud-timer" aria-label="Seconds until color shift"><span id="uiTimer">30</span></span></div>
+                </div>
+            </section>
 
-        <div class="game-btn-row">
-            <button class="control-btn icon-btn" id="btnMusic" title="Music">
-                <!-- Use Font Awesome volume icon; default to muted (xmark) until user enables -->
-                <i id="iconMusic" class="fa-solid fa-volume-xmark" aria-hidden="true"></i>
-            </button>
-            <button class="control-btn icon-btn" id="btnPause" title="Pause/Play">
-                <i id="faPause" class="fa-solid fa-pause"></i>
-                <i id="faPlay" class="fa-solid fa-play" style="display:none;"></i>
-            </button>
-            <button class="control-btn icon-btn" id="btnRetry" title="Retry">
-                <i id="iconRetry" class="fa-solid fa-rotate-right"></i>
-            </button>
+            <section class="hud-bottom-right" aria-label="Score and active power-ups">
+                <div class="powerup-bar" id="powerupBar" hidden aria-label="Active power-ups">
+                    <span class="powerup-icon powerup-icon--shield" id="pwrShield" title="Shield active" aria-label="Shield active" hidden><i class="fa-solid fa-shield-halved" aria-hidden="true"></i></span>
+                    <span class="powerup-icon powerup-icon--slow" id="pwrClock" title="Slow active" aria-label="Slow active" hidden><i class="fa-solid fa-clock" aria-hidden="true"></i></span>
+                    <span class="powerup-icon powerup-icon--magnet" id="pwrMagnet" title="Magnet active" aria-label="Magnet active" hidden><i class="fa-solid fa-magnet" aria-hidden="true"></i></span>
+                </div>
+                <div class="score-chip" aria-label="Score"><span id="uiScore">0</span></div>
+            </section>
         </div>
 
         <audio id="bgm" loop src="SFX/bgm.mp3"></audio>
@@ -165,20 +171,18 @@
                 // Centralized control show/hide helpers (exposed globally)
                 window.showControls = function () {
                     try {
-                        var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'flex'; gb.style.pointerEvents = 'auto'; gb.style.opacity = ''; }
+                        var menuButton = document.getElementById('btnMenu'); if (menuButton) { menuButton.style.display = 'grid'; menuButton.style.pointerEvents = 'auto'; }
                         // show HUD layers (score, lives, timer, powerups)
-                        var huds = document.querySelectorAll('.hud-layer'); huds.forEach(h=>{ h.style.display = 'flex'; h.style.pointerEvents = 'auto'; });
-                        // ensure mana bar (if present) is visible
-                        var m = document.getElementById('manaBar'); if (m) { m.style.display = ''; }
+                        var huds = document.querySelectorAll('.hud-layer'); huds.forEach(h=>{ h.style.display = 'flex'; h.style.pointerEvents = 'none'; });
                     } catch (e) { }
                 };
                 window.hideControls = function () {
                     try {
-                        var gb = document.querySelector('.game-btn-row'); if (gb) { gb.style.display = 'none'; gb.style.pointerEvents = 'none'; }
+                        var menuButton = document.getElementById('btnMenu'); if (menuButton) { menuButton.style.display = 'none'; menuButton.style.pointerEvents = 'none'; }
+                        var pauseMenu = document.getElementById('pauseMenu'); if (pauseMenu) { pauseMenu.classList.remove('is-open'); }
+                        var scrim = document.getElementById('menuScrim'); if (scrim) { scrim.classList.remove('is-open'); }
                         // hide HUD layers (score, lives, timer, powerups)
                         var huds = document.querySelectorAll('.hud-layer'); huds.forEach(h=>{ h.style.display = 'none'; h.style.pointerEvents = 'none'; });
-                        // hide mana bar if present
-                        var m = document.getElementById('manaBar'); if (m) { m.style.display = 'none'; }
                     } catch (e) { }
                 };
                 var overlay = document.getElementById('tutorialOverlay');
