@@ -905,7 +905,7 @@ body.full-mana #manaBarFill { box-shadow: 0 0 30px rgba(122,67,255,0.25), inset 
 .score-chip__label { display: none; }
 
 .hud-health .hearts { min-height: 0; gap: 4px; }
-.heart-ui { width: 16px; height: 16px; }
+.heart-ui { width: 21px; height: 21px; }
 
 .hud-precision { min-width: 0; }
 #manaBar {
@@ -1033,3 +1033,177 @@ body.full-mana #manaBarFill { box-shadow: 0 0 30px rgba(122,67,255,0.25), inset 
 #powerupBar .powerup-icon--shield { --powerup-color: #62f4d2; }
 #powerupBar .powerup-icon--slow { --powerup-color: #87c9ff; }
 #powerupBar .powerup-icon--magnet { --powerup-color: #ff90cf; }
+
+/* Home screen: compact launch controls over the live game-style backdrop. */
+.start-overlay {
+    cursor: default;
+    align-items: stretch;
+    justify-content: stretch;
+    background: #061017;
+    isolation: isolate;
+}
+
+.start-bg-canvas { z-index: 0; }
+
+/* Credits have their own home action, so the legacy footer stays out of this layout. */
+body:has(#tutorialOverlay) .footer-credit { display: none !important; }
+
+.home-shell {
+    position: relative;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    width: min(470px, 48vw);
+    min-height: 100%;
+    padding: clamp(32px, 7vw, 112px);
+    color: #e8f1ff;
+    background: linear-gradient(90deg, rgba(4, 12, 19, 0.97) 0%, rgba(4, 12, 19, 0.87) 55%, rgba(4, 12, 19, 0) 100%);
+}
+
+.home-brand { margin-bottom: 40px; }
+
+.home-shell .game-title {
+    margin: 0;
+    color: #e8f1ff;
+    font-size: clamp(2.85rem, 5.1vw, 5.25rem);
+    line-height: 0.9;
+    font-weight: 900;
+    letter-spacing: 0.045em;
+    text-align: left;
+}
+
+.home-shell .subtitle {
+    margin: 13px 0 0;
+    color: rgba(232, 241, 255, 0.66);
+    font-size: 0.76rem;
+    font-weight: 800;
+    letter-spacing: 0.2em;
+    text-transform: uppercase;
+}
+
+.home-actions {
+    display: grid;
+    gap: 8px;
+    width: min(250px, 100%);
+}
+
+.home-action {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 42px;
+    padding: 8px 12px;
+    border: 0;
+    border-radius: 8px;
+    color: rgba(232, 241, 255, 0.86);
+    background: transparent;
+    font: inherit;
+    font-size: 0.83rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    text-align: left;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.home-action i { width: 18px; text-align: center; color: #75e9ff; }
+.home-action:hover, .home-action:focus-visible { color: #fff; background: rgba(119, 234, 255, 0.10); transform: translateX(4px); outline: none; }
+.home-action--play { color: #071118; background: #77e9ff; box-shadow: 0 0 22px rgba(81, 227, 255, 0.28); }
+.home-action--play i { color: #071118; }
+.home-action--play:hover, .home-action--play:focus-visible { color: #071118; background: #b4f6ff; }
+
+.home-audio-controls {
+    position: absolute;
+    bottom: 32px;
+    left: clamp(32px, 7vw, 112px);
+    display: flex;
+    gap: 5px;
+}
+
+.home-music {
+    display: grid;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: rgba(232, 241, 255, 0.7);
+    background: transparent;
+    cursor: pointer;
+    transition: color 150ms ease, background-color 150ms ease, transform 150ms ease;
+}
+
+.home-music:hover, .home-music:focus-visible { color: #77e9ff; background: rgba(119, 234, 255, 0.1); transform: scale(1.08); outline: none; }
+.home-music[aria-pressed="true"] { color: #77e9ff; }
+.home-music svg, .home-music i { width: 18px; height: 18px; }
+.home-sound-icon--off { display: none !important; }
+.home-music[aria-pressed="false"] .home-sound-icon--on { display: none !important; }
+.home-music[aria-pressed="false"] .home-sound-icon--off { display: block !important; }
+
+.home-modal {
+    position: absolute;
+    z-index: 4;
+    inset: 0;
+    display: grid;
+    place-items: center;
+    padding: 22px;
+    background: rgba(2, 7, 12, 0.62);
+    backdrop-filter: blur(8px);
+}
+
+.home-modal[hidden] { display: none; }
+
+.home-modal__panel {
+    position: relative;
+    width: min(660px, 100%);
+    padding: 30px;
+    border: 1px solid rgba(119, 233, 255, 0.20);
+    border-radius: 16px;
+    color: #e8f1ff;
+    background: rgba(8, 18, 29, 0.96);
+    box-shadow: 0 24px 80px rgba(0, 0, 0, 0.48);
+}
+
+.home-modal__panel--credits { width: min(390px, 100%); }
+.home-modal__panel h2 { margin: 3px 34px 22px 0; font-size: clamp(1.25rem, 2vw, 1.75rem); }
+.home-modal__panel p { margin: 0; color: rgba(232, 241, 255, 0.72); line-height: 1.55; }
+.home-modal__panel a { color: #77e9ff; }
+.home-modal__eyebrow { color: #77e9ff !important; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.17em; text-transform: uppercase; }
+
+.home-modal__close {
+    position: absolute;
+    top: 14px;
+    right: 14px;
+    display: grid;
+    width: 32px;
+    height: 32px;
+    place-items: center;
+    padding: 0;
+    border: 0;
+    border-radius: 50%;
+    color: rgba(232, 241, 255, 0.72);
+    background: transparent;
+    cursor: pointer;
+}
+
+.home-modal__close:hover, .home-modal__close:focus-visible { color: #fff; background: rgba(255, 255, 255, 0.09); outline: none; }
+
+.guide-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+.guide-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px; border-radius: 9px; background: rgba(255, 255, 255, 0.035); color: rgba(232, 241, 255, 0.72); font-size: 0.78rem; line-height: 1.38; }
+.guide-item > i { width: 17px; margin-top: 1px; color: #77e9ff; text-align: center; }
+.guide-item b { color: #e8f1ff; }
+.guide-icons { display: inline-flex; gap: 5px; min-width: 48px; color: #ffe77a; }
+.guide-icons i:nth-child(2) { color: #8ecbff; }
+.guide-icons i:nth-child(3) { color: #ff9bd6; }
+
+@media (max-width: 720px) {
+    .home-shell { width: 100%; padding: 34px 28px; background: linear-gradient(90deg, rgba(4, 12, 19, 0.94), rgba(4, 12, 19, 0.4)); }
+    .home-brand { margin-bottom: 28px; }
+    .home-audio-controls { bottom: 22px; left: 28px; }
+    .home-modal__panel { max-height: calc(100vh - 44px); overflow: auto; padding: 24px; }
+    .guide-grid { grid-template-columns: 1fr; }
+}

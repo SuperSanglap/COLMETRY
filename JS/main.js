@@ -13,8 +13,25 @@
     const musicLabel = byId('menuMusicLabel');
     const musicIcon = byId('iconMusic');
     const bgm = byId('bgm');
+    const homeMusicButton = byId('homeMusic');
+    const homeMusicIcon = byId('homeMusicIcon');
+    const homeSoundButton = byId('homeSound');
+    const guideButton = byId('guideBtn');
+    const creditsHomeButton = byId('creditsBtn');
+    const guideModal = byId('guideModal');
+    const creditsModal = byId('creditsModal');
+    const homeModals = [guideModal, creditsModal].filter(Boolean);
 
     window._bgmUserOn = !!window._bgmUserOn;
+    window._soundUserOn = window._soundUserOn !== false;
+
+    function applySoundPreference() {
+        // This covers the current music track and provides one master preference
+        // for any game sound effects added later.
+        document.querySelectorAll('audio').forEach((audio) => {
+            audio.muted = !window._soundUserOn;
+        });
+    }
 
     function syncMusicControl() {
         const isOn = !!window._bgmUserOn;
@@ -23,6 +40,28 @@
             musicIcon.classList.toggle('fa-volume-high', isOn);
             musicIcon.classList.toggle('fa-volume-xmark', !isOn);
             musicIcon.classList.remove('fa-volume-off');
+        }
+        if (homeMusicButton) {
+            homeMusicButton.setAttribute('aria-pressed', String(isOn));
+            homeMusicButton.setAttribute('aria-label', `Turn music ${isOn ? 'off' : 'on'}`);
+            homeMusicButton.title = `Music ${isOn ? 'on' : 'off'}`;
+        }
+        if (homeMusicIcon) {
+            homeMusicIcon.classList.add('fa-music');
+        }
+        if (homeSoundButton) {
+            homeSoundButton.setAttribute('aria-pressed', String(!!window._soundUserOn));
+            homeSoundButton.setAttribute('aria-label', `Turn sound ${window._soundUserOn ? 'off' : 'on'}`);
+            homeSoundButton.title = `Sound ${window._soundUserOn ? 'on' : 'off'}`;
+        }
+    }
+
+    function setHomeModal(modal, isOpen) {
+        if (!modal) return;
+        modal.hidden = !isOpen;
+        if (isOpen) {
+            const closeButton = modal.querySelector('[data-home-modal-close]');
+            if (closeButton) closeButton.focus();
         }
     }
 
@@ -77,7 +116,14 @@
         });
     }
 
+    function toggleSound() {
+        window._soundUserOn = !window._soundUserOn;
+        applySoundPreference();
+        syncMusicControl();
+    }
+
     if (bgm) {
+        applySoundPreference();
         bgm.addEventListener('play', () => {
             window._bgmUserOn = true;
             syncMusicControl();
@@ -120,6 +166,15 @@
         creditsButton.setAttribute('aria-expanded', String(!!willShow));
     });
     if (musicButton) musicButton.addEventListener('click', toggleMusic);
+    if (homeMusicButton) homeMusicButton.addEventListener('click', toggleMusic);
+    if (homeSoundButton) homeSoundButton.addEventListener('click', toggleSound);
+    if (guideButton) guideButton.addEventListener('click', () => setHomeModal(guideModal, true));
+    if (creditsHomeButton) creditsHomeButton.addEventListener('click', () => setHomeModal(creditsModal, true));
+    homeModals.forEach((modal) => {
+        modal.addEventListener('click', (event) => {
+            if (event.target === modal || event.target.closest('[data-home-modal-close]')) setHomeModal(modal, false);
+        });
+    });
 
     const overlayHome = byId('btnOverlayHome');
     if (overlayHome) overlayHome.addEventListener('click', () => window.location.reload());
@@ -145,6 +200,12 @@
     document.addEventListener('webkitfullscreenchange', pauseAfterFullscreenExit);
 
     document.addEventListener('keydown', (event) => {
+        const openHomeModal = homeModals.find((modal) => !modal.hidden);
+        if (event.key === 'Escape' && openHomeModal) {
+            event.preventDefault();
+            setHomeModal(openHomeModal, false);
+            return;
+        }
         if (event.key !== 'Escape' || event.repeat || window._coloroidGameBlocked || window.gameOver) return;
         event.preventDefault();
         // If the browser allows this event through while fullscreen, always keep

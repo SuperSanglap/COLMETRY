@@ -1,9 +1,10 @@
-!!!! Hide the top elements in the game mode.
+IMPLEMENTATIONS
+
+High Score Saving in Cookie
+3 Game Modes - EASY, MEDIUM, HARD
+
+BUGS
 
 The Magnet Issue
-Better looking home-screen
-On-Mobile There will be caution of not-availablity but with ads
-Running Ads on Home-screen and Game Over Screen
-Fix Bugs
-Protect the Code
-Launch
+Home Screen Music Control and reflection show up in gamescreen
+Blocking the Game on Touch based Devices

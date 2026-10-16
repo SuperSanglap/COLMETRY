@@ -6,34 +6,107 @@ function isMobile() {
 
 // Show overlays and block game on mobile
 window.addEventListener('DOMContentLoaded', function() {
-    // Render animated background for start overlay
+    // Render a sparse, game-like field of falling shapes for the home screen.
+    // It intentionally has no hoverboard or HUD elements.
+    const HOME_ORB_DENSITY = 0.15;
+    const HOME_ORB_COLORS = ['#FF385F', '#FF7A18', '#FFD814', '#61EC2E', '#18B7EE', '#8B25EE'];
+    const HOME_ORB_SHAPES = ['circle', 'triangle', 'square', 'pentagon', 'hexagon', 'star', 'semicircle'];
+    let homeOrbs = [];
+    let homeBgSize = { width: 0, height: 0 };
+    let homeBgLastFrame = performance.now();
+
+    function makeHomeOrb(width, height, entering) {
+        const radius = 7 + Math.random() * 8;
+        return {
+            x: radius + Math.random() * Math.max(1, width - radius * 2),
+            y: entering ? -radius - Math.random() * height * 0.18 : Math.random() * height,
+            radius,
+            color: HOME_ORB_COLORS[Math.floor(Math.random() * HOME_ORB_COLORS.length)],
+            shape: HOME_ORB_SHAPES[Math.floor(Math.random() * HOME_ORB_SHAPES.length)],
+            speed: 26 + Math.random() * 38,
+            rotation: Math.random() * Math.PI * 2,
+            spin: (Math.random() - 0.5) * 0.8
+        };
+    }
+
+    function drawHomeOrb(ctx, orb) {
+        const sides = orb.shape === 'triangle' ? 3 : orb.shape === 'square' ? 4 : orb.shape === 'pentagon' ? 5 : orb.shape === 'hexagon' ? 6 : 0;
+        ctx.save();
+        ctx.translate(orb.x, orb.y);
+        ctx.rotate(orb.rotation);
+        ctx.fillStyle = orb.color;
+        ctx.shadowColor = orb.color;
+        ctx.shadowBlur = 10;
+        ctx.globalAlpha = 0.78;
+        ctx.beginPath();
+        if (orb.shape === 'circle') {
+            ctx.arc(0, 0, orb.radius, 0, Math.PI * 2);
+        } else if (orb.shape === 'semicircle') {
+            ctx.arc(0, 0, orb.radius, -Math.PI / 2, Math.PI / 2);
+            ctx.lineTo(0, orb.radius);
+            ctx.closePath();
+        } else if (orb.shape === 'star') {
+            for (let point = 0; point < 10; point++) {
+                const angle = -Math.PI / 2 + point * Math.PI / 5;
+                const radius = point % 2 ? orb.radius * 0.46 : orb.radius;
+                const x = Math.cos(angle) * radius;
+                const y = Math.sin(angle) * radius;
+                point ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+            }
+            ctx.closePath();
+        } else {
+            for (let point = 0; point < sides; point++) {
+                const angle = -Math.PI / 2 + point * Math.PI * 2 / sides;
+                const x = Math.cos(angle) * orb.radius;
+                const y = Math.sin(angle) * orb.radius;
+                point ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+            }
+            ctx.closePath();
+        }
+        ctx.fill();
+        ctx.restore();
+    }
+
     function drawStartBgOnce() {
         const canvas = document.getElementById('startBgCanvas');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const W = window.innerWidth;
         const H = window.innerHeight;
-        canvas.width = W;
-        canvas.height = H;
-        ctx.clearRect(0, 0, W, H);
-        // Opaque background
-        ctx.fillStyle = '#0e1a24';
-        ctx.fillRect(0, 0, W, H);
-        // Animated waves (like game bg)
-        const bgWaveCount = 3;
+        if (canvas.width !== W || canvas.height !== H) {
+            canvas.width = W;
+            canvas.height = H;
+        }
+        if (homeBgSize.width !== W || homeBgSize.height !== H) {
+            const orbCount = Math.max(7, Math.round((W * H / (1920 * 1080)) * 80 * HOME_ORB_DENSITY));
+            homeOrbs = Array.from({ length: orbCount }, () => makeHomeOrb(W, H, false));
+            homeBgSize = { width: W, height: H };
+        }
         const now = performance.now();
+        const dt = Math.min(0.05, (now - homeBgLastFrame) / 1000);
+        homeBgLastFrame = now;
+        ctx.clearRect(0, 0, W, H);
+        ctx.fillStyle = '#061017';
+        ctx.fillRect(0, 0, W, H);
+        const bgWaveCount = 3;
         for (let i = 0; i < bgWaveCount; i++) {
             const t = now / 1000 + i * 2;
-            ctx.globalAlpha = 0.13 + 0.09 * Math.sin(t + i);
+            ctx.globalAlpha = 0.09 + 0.06 * Math.sin(t + i);
             const grad = ctx.createLinearGradient(0, 0, W, H);
-            grad.addColorStop(0, `hsl(${200 + i * 30}, 80%, 22%)`);
-            grad.addColorStop(1, `hsl(${220 + i * 30}, 90%, 14%)`);
+            grad.addColorStop(0, `hsl(${200 + i * 30}, 80%, 18%)`);
+            grad.addColorStop(1, `hsl(${220 + i * 30}, 90%, 11%)`);
             ctx.fillStyle = grad;
             ctx.beginPath();
             ctx.moveTo(0, H * (0.2 + 0.2 * Math.sin(t)));
             for (let x = 0; x <= W; x += 40) ctx.lineTo(x, H * (0.2 + 0.2 * Math.sin(t + x / 200 + i)));
             ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
         }
+        homeOrbs.forEach((orb, index) => {
+            orb.y += orb.speed * dt;
+            orb.rotation += orb.spin * dt;
+            if (orb.y - orb.radius > H + 10) homeOrbs[index] = makeHomeOrb(W, H, true);
+            drawHomeOrb(ctx, homeOrbs[index]);
+        });
         ctx.globalAlpha = 1;
     }
 

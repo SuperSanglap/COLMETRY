@@ -83,10 +83,6 @@
                 <button id="menuResume" type="button"><i class="fa-solid fa-play" aria-hidden="true"></i> Resume</button>
                 <button id="menuRestart" type="button"><i class="fa-solid fa-rotate-right" aria-hidden="true"></i> Restart</button>
                 <button id="menuHome" type="button"><i class="fa-solid fa-house" aria-hidden="true"></i> Main menu</button>
-                <button id="menuCredits" type="button" aria-expanded="false"><i class="fa-solid fa-circle-info" aria-hidden="true"></i> Credits</button>
-                <div class="pause-menu__credits" id="menuCreditsPanel" hidden>
-                    Made with <span aria-hidden="true">♥</span> by <a href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">ZZeoN</a>
-                </div>
                 <button id="menuMusic" type="button"><i id="iconMusic" class="fa-solid fa-volume-xmark" aria-hidden="true"></i> <span id="menuMusicLabel">Music: Off</span></button>
             </nav>
         </aside>
@@ -129,40 +125,55 @@
         <!-- Start Screen Overlay -->
         <div class="overlay start-overlay" id="tutorialOverlay" style="display:flex;">
             <canvas id="startBgCanvas" class="start-bg-canvas"></canvas>
-            <div class="start-content">
-                <div class="start-header">
-                    <div class="start-orbs" aria-hidden="true">
-                        <span class="orb o1"></span>
-                        <span class="orb o2"></span>
-                        <span class="orb o3"></span>
-                        <span class="orb o4"></span>
-                    </div>
+            <main class="home-shell" aria-label="COLMETRY home screen">
+                <header class="home-brand">
                     <div id="coloroidTitle" class="game-title">COLMETRY</div>
-                    <div class="subtitle">Color. Catch. Conquer.</div>
-                </div>
+                    <p class="subtitle">Color. Catch. Conquer.</p>
+                </header>
 
-                <div class="card start-card">
-                    <h2>How to Play</h2>
-                    <ul class="howto">
-                        <li>Move the mouse to control the paddle.</li>
-                        <li>Hold <b>left mouse button</b> to shrink the paddle for precision.</li>
-                        <li>Catch orbs matching the current color for points.</li>
-                        <li>Avoid wrong colors, collect powerups, and survive!</li>
-                    </ul>
-                    <button id="startBtn" class="start-cta">Play Now</button>
+                <nav class="home-actions" aria-label="Home actions">
+                    <button id="startBtn" class="home-action home-action--play" type="button"><i class="fa-solid fa-play" aria-hidden="true"></i><span>Play now</span></button>
+                    <button id="guideBtn" class="home-action" type="button" aria-haspopup="dialog" aria-controls="guideModal"><i class="fa-solid fa-circle-question" aria-hidden="true"></i><span>Guide</span></button>
+                    <button id="creditsBtn" class="home-action" type="button" aria-haspopup="dialog" aria-controls="creditsModal"><i class="fa-solid fa-circle-info" aria-hidden="true"></i><span>Credits</span></button>
+                </nav>
+
+                <div class="home-audio-controls" aria-label="Audio controls">
+                    <button id="homeMusic" class="home-music" type="button" aria-label="Turn music on" aria-pressed="false" title="Music off">
+                        <i id="homeMusicIcon" class="fa-solid fa-music" aria-hidden="true"></i>
+                    </button>
+                    <button id="homeSound" class="home-music" type="button" aria-label="Turn sound off" aria-pressed="true" title="Sound on">
+                        <i class="fa-solid fa-volume-high home-sound-icon--on" aria-hidden="true"></i>
+                        <i class="fa-solid fa-volume-xmark home-sound-icon--off" aria-hidden="true"></i>
+                    </button>
                 </div>
-            </div>
-            <!-- Falling decorative elements container -->
-            <div class="fall-container" aria-hidden="true">
-                <div class="fall c1"></div>
-                <div class="fall c2"></div>
-                <div class="fall c3"></div>
-                <div class="fall c4"></div>
-                <div class="fall c5"></div>
-                <!-- New shapes -->
-                <div class="fall star"></div>
-                <div class="fall square"></div>
-            </div>
+            </main>
+
+            <section class="home-modal" id="guideModal" role="dialog" aria-modal="true" aria-labelledby="guideTitle" hidden>
+                <div class="home-modal__panel">
+                    <button class="home-modal__close" type="button" data-home-modal-close aria-label="Close guide"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <p class="home-modal__eyebrow">How to play</p>
+                    <h2 id="guideTitle">Keep the right colour in reach.</h2>
+                    <div class="guide-grid">
+                        <div class="guide-item"><i class="fa-solid fa-computer-mouse" aria-hidden="true"></i><span><b>Move</b> your mouse to steer.</span></div>
+                        <div class="guide-item"><i class="fa-solid fa-crosshairs" aria-hidden="true"></i><span><b>Precision</b> — hold left click to shrink the board and spend Mana.</span></div>
+                        <div class="guide-item"><i class="fa-solid fa-star" aria-hidden="true"></i><span><b>Score</b> by catching shapes matching the active colour. Stars give 100.</span></div>
+                        <div class="guide-item"><i class="fa-solid fa-heart" aria-hidden="true"></i><span><b>Lives</b> — wrong colours cost one; hearts restore them.</span></div>
+                        <div class="guide-item"><span class="guide-icons"><i class="fa-solid fa-shield-halved" aria-hidden="true"></i><i class="fa-solid fa-clock" aria-hidden="true"></i><i class="fa-solid fa-magnet" aria-hidden="true"></i></span><span><b>Power-ups</b> grant Shield, Slow, and Magnet.</span></div>
+                        <div class="guide-item"><i class="fa-solid fa-bolt" aria-hidden="true"></i><span><b>Mana</b> refills from matching catches and fills the board centre-out.</span></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="home-modal" id="creditsModal" role="dialog" aria-modal="true" aria-labelledby="creditsTitle" hidden>
+                <div class="home-modal__panel home-modal__panel--credits">
+                    <button class="home-modal__close" type="button" data-home-modal-close aria-label="Close credits"><i class="fa-solid fa-xmark" aria-hidden="true"></i></button>
+                    <p class="home-modal__eyebrow">Credits</p>
+                    <h2 id="creditsTitle">COLMETRY</h2>
+                    <p>Crafted with creativity. Built with code.</p>
+                    <p>Conceived & Developed by <a href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">Sanglap Putatunda</a>.
+                    <p>© 2026 Sanglap Putatunda. All rights reserved.</p>
+                </div>
+            </section>
         </div>
 
         <script>
@@ -271,7 +282,7 @@
             (function () {
                 var overlay = document.getElementById('tutorialOverlay');
                 if (!overlay) return;
-                function shouldAllow(e) { return e && e.target && e.target.closest && (e.target.closest('#startBtn') || e.target.closest('.footer-credit') || e.target.closest('#credit-link') || e.target.closest('#music')); }
+                function shouldAllow(e) { return e && e.target && e.target.closest && (e.target.closest('.home-shell') || e.target.closest('.home-modal') || e.target.closest('.footer-credit') || e.target.closest('#credit-link')); }
                 function blocker(e) {
                     try {
                         var currentOverlay = document.getElementById('tutorialOverlay');
@@ -293,16 +304,6 @@
                 <h2>PC Only</h2>
                 <p>This game is designed for desktop/laptop computers.<br>Please open on a PC for the best experience.
                 </p>
-            </div>
-        </div>
-
-        <!-- Footer credit -->
-        <div class="footer-credit"
-            style="position:fixed;left:0;right:0;bottom:8px;z-index:1010;pointer-events:auto;display:flex;justify-content:center;">
-            <div class="credit small"
-                style="padding:6px 10px;background:rgba(8,12,18,0.6);border-radius:8px;border:1px solid rgba(255,255,255,0.04);">
-                made with <span style="color: crimson;">♥</span> by <a id="credit-link"
-                    href="https://github.com/SuperSanglap" target="_blank" rel="noopener noreferrer">ZZeoN</a>
             </div>
         </div>
 
