@@ -369,12 +369,12 @@ const HOVERBOARD_SCORE_STEP = 1000;
 const HOVERBOARD_CHANGE_DURATION = 0.55;
 const HOVERBOARD_ASPECT = 1200 / 120;
 const HOVERBOARD_SOURCES = [
-    'SPRITES/RECT.png',
-    'SPRITES/TRAP.png',
-    'SPRITES/HEXE.png',
-    'SPRITES/OCTE.png',
-    'SPRITES/OCEL.png',
-    'SPRITES/AHED.png'
+    'ASSETS/SPRITES/RECT.png',
+    'ASSETS/SPRITES/TRAP.png',
+    'ASSETS/SPRITES/HEXE.png',
+    'ASSETS/SPRITES/OCTE.png',
+    'ASSETS/SPRITES/OCEL.png',
+    'ASSETS/SPRITES/AHED.png'
 ];
 const hoverboardSprites = HOVERBOARD_SOURCES.map((src) => {
     const image = new Image();
